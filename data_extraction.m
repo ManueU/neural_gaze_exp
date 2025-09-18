@@ -16,120 +16,57 @@ end
 paradigm = input("Please enter the condition you want to analyse (i.e., 'Free-gaze', 'Gaze', 'Motor', 'Gaze + Motor'): ");
 switch (paradigm) 
     case "Free-gaze"
-        % set002, set010, set013, set015          
         set_numbers = [2,10,13,15]; 
         sets = {set002, set010, set013, set015};
-
-        % idxs of time bins at the beginning of each set to be removed
-        empty_idx = cellfun(@isempty, set002.TaskStateMasks.state_name');
-        d = diff([empty_idx; 0]);
-        idx_start_1 = find(d == -1);
-        idx_start_1 = idx_start_1 - 1; 
-        clear empty_idx
-
-        empty_idx = cellfun(@isempty, set010.TaskStateMasks.state_name');
-        d = diff([empty_idx; 0]);
-        idx_start_2 = find(d == -1);
-        idx_start_2 = idx_start_2 - 1; 
-        clear empty_idx
-
-        empty_idx = cellfun(@isempty, set013.TaskStateMasks.state_name');
-        d = diff([empty_idx; 0]);
-        idx_start_3 = find(d == -1);
-        idx_start_3 = idx_start_3 - 1; 
-        clear empty_idx
-
-        empty_idx = cellfun(@isempty, set015.TaskStateMasks.state_name');
-        d = diff([empty_idx; 0]);
-        idx_start_4 = find(d == -1);
-        idx_start_4 = idx_start_4 - 1; 
-        clear empty_idx
-
-        idx_start = [idx_start_1, idx_start_2, idx_start_3, idx_start_4];
-
-
-        MaskedSpikeCounts = [set002.SpikeCount(idx_start(1):end,1:5:end); set010.SpikeCount(idx_start(2):end,1:5:end); set013.SpikeCount(idx_start(3):end,1:5:end); set015.SpikeCount(idx_start(4):end,1:5:end)]; 
-        task_state_labels = [set002.TaskStateMasks.state_name(idx_start(1):end)'; set010.TaskStateMasks.state_name(idx_start(2):end)'; set013.TaskStateMasks.state_name(idx_start(3):end)'; set015.TaskStateMasks.state_name(idx_start(4):end)'];
-        target_coordinates = [[set002.TaskStateMasks.target(2,idx_start(1):end)'; set010.TaskStateMasks.target(2,idx_start(2):end)'; set013.TaskStateMasks.target(2,idx_start(3):end)'; set015.TaskStateMasks.target(2,idx_start(4):end)'], ...
-                            [set002.TaskStateMasks.target(3,idx_start(1):end)'; set010.TaskStateMasks.target(3,idx_start(2):end)'; set013.TaskStateMasks.target(3,idx_start(3):end)'; set015.TaskStateMasks.target(3,idx_start(4):end)']];
-        trial_labels = [set002.trial_num(idx_start(1):end)'; set010.trial_num(idx_start(2):end)' + set002.trial_num(end); set013.trial_num(idx_start(3):end)' + set002.trial_num(end) + set010.trial_num(end); set015.trial_num(idx_start(4):end)' + set002.trial_num(end) + set010.trial_num(end) + set013.trial_num(end)]; 
-        if isequal( sort(string(set002.TaskStateMasks.states)), ...
-                    sort(string(set010.TaskStateMasks.states)), ...
-                    sort(string(set013.TaskStateMasks.states)), ...
-                    sort(string(set015.TaskStateMasks.states)) )            
-            state_names = string(set002.TaskStateMasks.states); 
-        end 
     case "Gaze"
-        % set003, set008, set014, set018
         set_numbers = [3,8,14,18]; 
-
-        % idxs of time bins at the beginning of each set to be removed
-        empty_idx = cellfun(@isempty, set003.TaskStateMasks.state_name');
-        d = diff([empty_idx; 0]);
-        idx_start = find(d == -1);
-        idx_start = idx_start - 1; 
-        clear empty_idx
-
-        empty_idx = cellfun(@isempty, set003.TaskStateMasks.state_name');
-
-
-        MaskedSpikeCounts = [set003.SpikeCount(idx_start(1):end,1:5:end); set008.SpikeCount(idx_start(2):end,1:5:end); set014.SpikeCount(idx_start(3):end,1:5:end); set018.SpikeCount(idx_start(3):end,1:5:end)]; 
-        task_state_labels = [set003.TaskStateMasks.state_name(idx_start(1):end)'; set008.TaskStateMasks.state_name(idx_start(2):end)'; set014.TaskStateMasks.state_name(idx_start(3):end)'; set018.TaskStateMasks.state_name(idx_start(4):end)'];
-        target_coordinates = [[set003.TaskStateMasks.target(2,idx_start(1):end)'; set008.TaskStateMasks.target(2,idx_start(2):end)'; set014.TaskStateMasks.target(2,idx_start(3):end)'; set018.TaskStateMasks.target(2,idx_start(4):end)'], ...
-                            [set003.TaskStateMasks.target(3,idx_start(1):end)'; set008.TaskStateMasks.target(3,idx_start(2):end)'; set014.TaskStateMasks.target(3,idx_start(3):end)'; set018.TaskStateMasks.target(3,idx_start(4):end)']];
-        trial_labels = [set003.trial_num(idx_start(1):end)'; set008.trial_num(idx_start(2):end)' + set003.trial_num(end); set014.trial_num(idx_start(3):end)' + set003.trial_num(end) + set008.trial_num(end); set018.trial_num(idx_start(4):end)' + set003.trial_num(end) + set008.trial_num(end) + set014.trial_num(end)];     
-        if isequal( sort(string(set003.TaskStateMasks.states)), ...
-                    sort(string(set008.TaskStateMasks.states)), ...
-                    sort(string(set014.TaskStateMasks.states)), ...
-                    sort(string(set018.TaskStateMasks.states)) )            
-            state_names = string(set003.TaskStateMasks.states); 
-        end 
+        sets = {set003, set008, set014, set018};
     case "Motor"
-        % set004, set009, set011, set016
         set_numbers = [4,9,11,16];
-        task_state_labels = [set004.TaskStateMasks.state_name'; set009.TaskStateMasks.state_name'; set011.TaskStateMasks.state_name'; set016.TaskStateMasks.state_name'];
-
-        % idxs of time bins at the beginning of each set to be removed
-        empty_idx = cellfun(@isempty, task_state_labels);
-        d = diff([empty_idx; 0]);
-        idx_start = find(d == -1);
-        idx_start = idx_start - 1; 
-        clear task_state_labels;
-
-        MaskedSpikeCounts = [set004.SpikeCount(idx_start(1):end,1:5:end); set009.SpikeCount(idx_start(2):end,1:5:end); set011.SpikeCount(idx_start(3):end,1:5:end); set016.SpikeCount(idx_start(4):end,1:5:end)];
-        task_state_labels = [set004.TaskStateMasks.state_name(idx_start(1):end)'; set009.TaskStateMasks.state_name(idx_start(2):end)'; set011.TaskStateMasks.state_name(idx_start(3):end)'; set016.TaskStateMasks.state_name(idx_start(4):end)'];
-        target_coordinates = [[set004.TaskStateMasks.target(2,idx_start(1):end)'; set009.TaskStateMasks.target(2,idx_start(2):end)'; set011.TaskStateMasks.target(2,idx_start(3):end)'; set016.TaskStateMasks.target(2,idx_start(4):end)'], ...
-                            [set004.TaskStateMasks.target(3,idx_start(1):end)'; set009.TaskStateMasks.target(3,idx_start(2):end)'; set011.TaskStateMasks.target(3,idx_start(3):end)'; set016.TaskStateMasks.target(3,idx_start(4):end)']];
-        trial_labels = [set004.trial_num(idx_start(1):end)'; set009.trial_num(idx_start(2):end)' + set004.trial_num(end); set011.trial_num(idx_start(3):end)' + set009.trial_num(end) + set004.trial_num(end); set016.trial_num(idx_start(4):end)' + set011.trial_num(end) + set009.trial_num(end) + set004.trial_num(end)]; 
-        if isequal( sort(string(set004.TaskStateMasks.states)), ...
-                    sort(string(set009.TaskStateMasks.states)), ...
-                    sort(string(set011.TaskStateMasks.states)), ...
-                    sort(string(set016.TaskStateMasks.states)) )            
-            state_names = string(set004.TaskStateMasks.states); 
-        end 
+        sets = {set004, set009, set011, set016};
     case "Gaze + Motor"
-        % set005, set007, set012, set017
         set_numbers = [5,7,12,17]; 
-        task_state_labels = [set005.TaskStateMasks.state_name'; set007.TaskStateMasks.state_name'; set012.TaskStateMasks.state_name'; set017.TaskStateMasks.state_name'];
+        sets = {set005, set007, set012, set017};        
+end 
 
-        % idxs of time bins at the beginning of each set to be removed
-        empty_idx = cellfun(@isempty, task_state_labels);
-        d = diff([empty_idx; 0]);
-        idx_start = find(d == -1);
-        idx_start = idx_start - 1; 
-        clear task_state_labels;
+get_start_idx = @(S)((find(diff([cellfun(@isempty, S.TaskStateMasks.state_name(:)); 0]) == -1, 1, 'first') - 1));
+idx_start = arrayfun(@(i) get_start_idx(sets{i}), 1:numel(sets)); 
 
-        MaskedSpikeCounts = [set005.SpikeCount(idx_start(1):end,1:5:end); set007.SpikeCount(idx_start(2):end,1:5:end); set012.SpikeCount(idx_start(3):end,1:5:end); set017.SpikeCount(idx_start(4):end,1:5:end)];
-        task_state_labels = [set005.TaskStateMasks.state_name(idx_start(1):end)'; set007.TaskStateMasks.state_name(idx_start(2):end)'; set012.TaskStateMasks.state_name(idx_start(3):end)'; set017.TaskStateMasks.state_name(idx_start(4):end)'];        
-        target_coordinates = [[set005.TaskStateMasks.target(2,idx_start(1):end)'; set007.TaskStateMasks.target(2,idx_start(2):end)'; set012.TaskStateMasks.target(2,idx_start(3):end)'; set017.TaskStateMasks.target(2,idx_start(4):end)'], ...
-                            [set005.TaskStateMasks.target(3,idx_start(1):end)'; set007.TaskStateMasks.target(3,idx_start(2):end)'; set012.TaskStateMasks.target(3,idx_start(3):end)'; set017.TaskStateMasks.target(3,idx_start(4):end)']];
-        trial_labels = [set005.trial_num(idx_start(1):end)'; set007.trial_num(idx_start(2):end)' + set005.trial_num(end); set012.trial_num(idx_start(3):end)' + set007.trial_num(end) + set005.trial_num(end); set017.trial_num(idx_start(4):end)' set012.trial_num(end) + set007.trial_num(end) + set005.trial_num(end)]; 
-        if isequal( sort(string(set005.TaskStateMasks.states)), ...
-                    sort(string(set007.TaskStateMasks.states)), ...
-                    sort(string(set012.TaskStateMasks.states)), ...
-                    sort(string(set017.TaskStateMasks.states)) )            
-            state_names = string(set005.TaskStateMasks.states); 
-        end 
+MaskedSpikeCounts = vertcat( ...
+sets{1}.SpikeCount(idx_start(1):end, 1:5:end), ...
+sets{2}.SpikeCount(idx_start(2):end, 1:5:end), ...
+sets{3}.SpikeCount(idx_start(3):end, 1:5:end), ...
+sets{4}.SpikeCount(idx_start(4):end, 1:5:end) ...
+);
+
+task_state_labels = vertcat( ...
+sets{1}.TaskStateMasks.state_name(idx_start(1):end)', ...
+sets{2}.TaskStateMasks.state_name(idx_start(2):end)', ...
+sets{3}.TaskStateMasks.state_name(idx_start(3):end)', ...
+sets{4}.TaskStateMasks.state_name(idx_start(4):end)' ...
+);
+
+target_coordinates = vertcat( ...
+[sets{1}.TaskStateMasks.target(2, idx_start(1):end)'  sets{1}.TaskStateMasks.target(3, idx_start(1):end)'], ...
+[sets{2}.TaskStateMasks.target(2, idx_start(2):end)'  sets{2}.TaskStateMasks.target(3, idx_start(2):end)'], ...
+[sets{3}.TaskStateMasks.target(2, idx_start(3):end)'  sets{3}.TaskStateMasks.target(3, idx_start(3):end)'], ...
+[sets{4}.TaskStateMasks.target(2, idx_start(4):end)'  sets{4}.TaskStateMasks.target(3, idx_start(4):end)'] ...
+);
+
+ends    = cellfun(@(S) S.trial_num(end), sets);
+offsets = [0, cumsum(ends(1:end-1))];
+trial_labels = vertcat( ...
+sets{1}.trial_num(idx_start(1):end)' + offsets(1), ...
+sets{2}.trial_num(idx_start(2):end)' + offsets(2), ...
+sets{3}.trial_num(idx_start(3):end)' + offsets(3), ...
+sets{4}.trial_num(idx_start(4):end)' + offsets(4) ...
+);
+
+if isequal( sort(string(sets{1}.TaskStateMasks.states)), ...
+            sort(string(sets{2}.TaskStateMasks.states)), ...
+            sort(string(sets{3}.TaskStateMasks.states)), ...
+            sort(string(sets{4}.TaskStateMasks.states)) )            
+    state_names = string(sets{1}.TaskStateMasks.states); 
 end 
 
 state_names(1) = 'Center';
@@ -187,9 +124,9 @@ arrays.sens_m  = MaskedSpikeCounts(:, idx.medial_sens);
 arrays.sens_l  = MaskedSpikeCounts(:, idx.lateral_sens);
 
 %% Data structure definition
-trial_per_set = [40,32,32,32]; % da modificare
+trial_per_set = [32,32,32,32];                                              % da modificare
 n_trials = sum(trial_per_set); 
-paradigm = {'Gaze', 'Gaze', 'Gaze', 'Gaze'}; % da modificare
+paradigm = {'Gaze', 'Gaze', 'Gaze', 'Gaze'};                                % da modificare
 struct_l1 = {'Set', 'Paradigm', 'Data'};
 dataset_l1 = cell2struct(repmat({[]}, 1, numel(struct_l1)), struct_l1, 2);
 n = numel(set_numbers);
@@ -337,4 +274,3 @@ for n_set = 1:numel(set_numbers)
 end
 
 dataset = dataset_l1;
-clearvars -except Data dataset
