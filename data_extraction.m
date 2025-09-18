@@ -18,18 +18,40 @@ switch (paradigm)
     case "Free-gaze"
         % set002, set010, set013, set015          
         set_numbers = [2,10,13,15]; 
-        task_state_labels = [set002.TaskStateMasks.state_name'; set010.TaskStateMasks.state_name'; set013.TaskStateMasks.state_name'; set015.TaskStateMasks.state_name'];
+        sets = {set002, set010, set013, set015};
 
         % idxs of time bins at the beginning of each set to be removed
-        empty_idx = cellfun(@isempty, task_state_labels);
+        empty_idx = cellfun(@isempty, set002.TaskStateMasks.state_name');
         d = diff([empty_idx; 0]);
-        idx_start = find(d == -1);
-        clear task_state_labels;
+        idx_start_1 = find(d == -1);
+        idx_start_1 = idx_start_1 - 1; 
+        clear empty_idx
+
+        empty_idx = cellfun(@isempty, set010.TaskStateMasks.state_name');
+        d = diff([empty_idx; 0]);
+        idx_start_2 = find(d == -1);
+        idx_start_2 = idx_start_2 - 1; 
+        clear empty_idx
+
+        empty_idx = cellfun(@isempty, set013.TaskStateMasks.state_name');
+        d = diff([empty_idx; 0]);
+        idx_start_3 = find(d == -1);
+        idx_start_3 = idx_start_3 - 1; 
+        clear empty_idx
+
+        empty_idx = cellfun(@isempty, set015.TaskStateMasks.state_name');
+        d = diff([empty_idx; 0]);
+        idx_start_4 = find(d == -1);
+        idx_start_4 = idx_start_4 - 1; 
+        clear empty_idx
+
+        idx_start = [idx_start_1, idx_start_2, idx_start_3, idx_start_4];
+
 
         MaskedSpikeCounts = [set002.SpikeCount(idx_start(1):end,1:5:end); set010.SpikeCount(idx_start(2):end,1:5:end); set013.SpikeCount(idx_start(3):end,1:5:end); set015.SpikeCount(idx_start(4):end,1:5:end)]; 
         task_state_labels = [set002.TaskStateMasks.state_name(idx_start(1):end)'; set010.TaskStateMasks.state_name(idx_start(2):end)'; set013.TaskStateMasks.state_name(idx_start(3):end)'; set015.TaskStateMasks.state_name(idx_start(4):end)'];
-        target_labels = [set002.TaskStateMasks.targ_idx(idx_start(1):end)'; set010.TaskStateMasks.targ_idx(idx_start(2):end)'; set013.TaskStateMasks.targ_idx(idx_start(3):end)'; set015.TaskStateMasks.targ_idx(idx_start(4):end)']; 
-        target_labels(isnan(target_labels)) = 1;
+        target_coordinates = [[set002.TaskStateMasks.target(2,idx_start(1):end)'; set010.TaskStateMasks.target(2,idx_start(2):end)'; set013.TaskStateMasks.target(2,idx_start(3):end)'; set015.TaskStateMasks.target(2,idx_start(4):end)'], ...
+                            [set002.TaskStateMasks.target(3,idx_start(1):end)'; set010.TaskStateMasks.target(3,idx_start(2):end)'; set013.TaskStateMasks.target(3,idx_start(3):end)'; set015.TaskStateMasks.target(3,idx_start(4):end)']];
         trial_labels = [set002.trial_num(idx_start(1):end)'; set010.trial_num(idx_start(2):end)' + set002.trial_num(end); set013.trial_num(idx_start(3):end)' + set002.trial_num(end) + set010.trial_num(end); set015.trial_num(idx_start(4):end)' + set002.trial_num(end) + set010.trial_num(end) + set013.trial_num(end)]; 
         if isequal( sort(string(set002.TaskStateMasks.states)), ...
                     sort(string(set010.TaskStateMasks.states)), ...
@@ -40,18 +62,21 @@ switch (paradigm)
     case "Gaze"
         % set003, set008, set014, set018
         set_numbers = [3,8,14,18]; 
-        task_state_labels = [set003.TaskStateMasks.state_name'; set008.TaskStateMasks.state_name'; set014.TaskStateMasks.state_name'; set018.TaskStateMasks.state_name'];
 
         % idxs of time bins at the beginning of each set to be removed
-        empty_idx = cellfun(@isempty, task_state_labels);
+        empty_idx = cellfun(@isempty, set003.TaskStateMasks.state_name');
         d = diff([empty_idx; 0]);
         idx_start = find(d == -1);
-        clear task_state_labels;
+        idx_start = idx_start - 1; 
+        clear empty_idx
+
+        empty_idx = cellfun(@isempty, set003.TaskStateMasks.state_name');
+
 
         MaskedSpikeCounts = [set003.SpikeCount(idx_start(1):end,1:5:end); set008.SpikeCount(idx_start(2):end,1:5:end); set014.SpikeCount(idx_start(3):end,1:5:end); set018.SpikeCount(idx_start(3):end,1:5:end)]; 
         task_state_labels = [set003.TaskStateMasks.state_name(idx_start(1):end)'; set008.TaskStateMasks.state_name(idx_start(2):end)'; set014.TaskStateMasks.state_name(idx_start(3):end)'; set018.TaskStateMasks.state_name(idx_start(4):end)'];
-        target_labels = [set003.TaskStateMasks.targ_idx(idx_start(1):end)'; set008.TaskStateMasks.targ_idx(idx_start(2):end)'; set014.TaskStateMasks.targ_idx(idx_start(3):end)'; set018.TaskStateMasks.targ_idx(idx_start(4):end)']; 
-        target_labels(isnan(target_labels)) = 1;
+        target_coordinates = [[set003.TaskStateMasks.target(2,idx_start(1):end)'; set008.TaskStateMasks.target(2,idx_start(2):end)'; set014.TaskStateMasks.target(2,idx_start(3):end)'; set018.TaskStateMasks.target(2,idx_start(4):end)'], ...
+                            [set003.TaskStateMasks.target(3,idx_start(1):end)'; set008.TaskStateMasks.target(3,idx_start(2):end)'; set014.TaskStateMasks.target(3,idx_start(3):end)'; set018.TaskStateMasks.target(3,idx_start(4):end)']];
         trial_labels = [set003.trial_num(idx_start(1):end)'; set008.trial_num(idx_start(2):end)' + set003.trial_num(end); set014.trial_num(idx_start(3):end)' + set003.trial_num(end) + set008.trial_num(end); set018.trial_num(idx_start(4):end)' + set003.trial_num(end) + set008.trial_num(end) + set014.trial_num(end)];     
         if isequal( sort(string(set003.TaskStateMasks.states)), ...
                     sort(string(set008.TaskStateMasks.states)), ...
@@ -68,12 +93,13 @@ switch (paradigm)
         empty_idx = cellfun(@isempty, task_state_labels);
         d = diff([empty_idx; 0]);
         idx_start = find(d == -1);
+        idx_start = idx_start - 1; 
         clear task_state_labels;
 
         MaskedSpikeCounts = [set004.SpikeCount(idx_start(1):end,1:5:end); set009.SpikeCount(idx_start(2):end,1:5:end); set011.SpikeCount(idx_start(3):end,1:5:end); set016.SpikeCount(idx_start(4):end,1:5:end)];
         task_state_labels = [set004.TaskStateMasks.state_name(idx_start(1):end)'; set009.TaskStateMasks.state_name(idx_start(2):end)'; set011.TaskStateMasks.state_name(idx_start(3):end)'; set016.TaskStateMasks.state_name(idx_start(4):end)'];
-        target_labels = [set004.TaskStateMasks.targ_idx(idx_start(1):end)'; set009.TaskStateMasks.targ_idx(idx_start(2):end)'; set011.TaskStateMasks.targ_idx(idx_start(3):end)'; set016.TaskStateMasks.targ_idx(idx_start(4):end)']; 
-        target_labels(isnan(target_labels)) = 1;
+        target_coordinates = [[set004.TaskStateMasks.target(2,idx_start(1):end)'; set009.TaskStateMasks.target(2,idx_start(2):end)'; set011.TaskStateMasks.target(2,idx_start(3):end)'; set016.TaskStateMasks.target(2,idx_start(4):end)'], ...
+                            [set004.TaskStateMasks.target(3,idx_start(1):end)'; set009.TaskStateMasks.target(3,idx_start(2):end)'; set011.TaskStateMasks.target(3,idx_start(3):end)'; set016.TaskStateMasks.target(3,idx_start(4):end)']];
         trial_labels = [set004.trial_num(idx_start(1):end)'; set009.trial_num(idx_start(2):end)' + set004.trial_num(end); set011.trial_num(idx_start(3):end)' + set009.trial_num(end) + set004.trial_num(end); set016.trial_num(idx_start(4):end)' + set011.trial_num(end) + set009.trial_num(end) + set004.trial_num(end)]; 
         if isequal( sort(string(set004.TaskStateMasks.states)), ...
                     sort(string(set009.TaskStateMasks.states)), ...
@@ -90,12 +116,13 @@ switch (paradigm)
         empty_idx = cellfun(@isempty, task_state_labels);
         d = diff([empty_idx; 0]);
         idx_start = find(d == -1);
+        idx_start = idx_start - 1; 
         clear task_state_labels;
 
         MaskedSpikeCounts = [set005.SpikeCount(idx_start(1):end,1:5:end); set007.SpikeCount(idx_start(2):end,1:5:end); set012.SpikeCount(idx_start(3):end,1:5:end); set017.SpikeCount(idx_start(4):end,1:5:end)];
         task_state_labels = [set005.TaskStateMasks.state_name(idx_start(1):end)'; set007.TaskStateMasks.state_name(idx_start(2):end)'; set012.TaskStateMasks.state_name(idx_start(3):end)'; set017.TaskStateMasks.state_name(idx_start(4):end)'];        
-        target_labels = [set005.TaskStateMasks.targ_idx(idx_start(1):end)'; set007.TaskStateMasks.targ_idx(idx_start(2):end)'; set012.TaskStateMasks.targ_idx(idx_start(3):end)'; set017.TaskStateMasks.targ_idx(idx_start(4):end)']; 
-        target_labels(isnan(target_labels)) = 1;
+        target_coordinates = [[set005.TaskStateMasks.target(2,idx_start(1):end)'; set007.TaskStateMasks.target(2,idx_start(2):end)'; set012.TaskStateMasks.target(2,idx_start(3):end)'; set017.TaskStateMasks.target(2,idx_start(4):end)'], ...
+                            [set005.TaskStateMasks.target(3,idx_start(1):end)'; set007.TaskStateMasks.target(3,idx_start(2):end)'; set012.TaskStateMasks.target(3,idx_start(3):end)'; set017.TaskStateMasks.target(3,idx_start(4):end)']];
         trial_labels = [set005.trial_num(idx_start(1):end)'; set007.trial_num(idx_start(2):end)' + set005.trial_num(end); set012.trial_num(idx_start(3):end)' + set007.trial_num(end) + set005.trial_num(end); set017.trial_num(idx_start(4):end)' set012.trial_num(end) + set007.trial_num(end) + set005.trial_num(end)]; 
         if isequal( sort(string(set005.TaskStateMasks.states)), ...
                     sort(string(set007.TaskStateMasks.states)), ...
@@ -108,6 +135,8 @@ end
 state_names(1) = 'Center';
 empty_idx = cellfun(@isempty, task_state_labels);
 task_state_labels(empty_idx) = {'Center'};
+target_coordinates(empty_idx,1) = 0; 
+target_coordinates(empty_idx,2) = 0; 
 
 % Transform the "Remove" task state into "Reach" task state
 for i = 2:numel(task_state_labels)   
@@ -121,15 +150,31 @@ if any(state_names == "Remove" | state_names == "Remove1" | state_names == "Remo
     state_names(state_names == "Remove" | state_names == "Remove1" | state_names == "Remove2") = [];
 end
 
+% Assigning labels to targets
+target_info = target_coordinates; 
+target_info(:,3) = NaN;
+refXY = [  0      0
+           0      0.2
+           0.14   0.14
+           0.2    0
+           0.14  -0.14
+           0     -0.2
+          -0.14  -0.14
+          -0.2    0
+          -0.14   0.14 ];
+codes = (0:8).';
+tol = 1e-6;
+[tf, loc] = ismembertol(target_info(:,1:2), refXY, tol, 'ByRows', true);
+target_info(tf,3) = codes(loc(tf));
 
 %% Distinction between arrays
 % MaskedSpikeCounts = Data.SpikeCount(:,1:5:end);
 rowsWithNaN = any(isnan(MaskedSpikeCounts), 2);
 rowsToRemove = find(rowsWithNaN);
 MaskedSpikeCounts(rowsToRemove, :) = [];
-task_state_labels(:, rowsToRemove) = [];
-target_labels(:, rowsToRemove) = [];
-trial_labels(:, rowsToRemove) = []; 
+task_state_labels(rowsToRemove) = [];
+target_coordinates(rowsToRemove,:) = [];
+trial_labels(rowsToRemove) = []; 
 
 idx.medial_sens   = 65:96;                   % Sensory medial (32ch)
 idx.lateral_sens  = 193:224;                 % Sensory lateral (32ch)
@@ -142,7 +187,7 @@ arrays.sens_m  = MaskedSpikeCounts(:, idx.medial_sens);
 arrays.sens_l  = MaskedSpikeCounts(:, idx.lateral_sens);
 
 %% Data structure definition
-trial_per_set = [32,32,32,32]; % da modificare
+trial_per_set = [40,32,32,32]; % da modificare
 n_trials = sum(trial_per_set); 
 paradigm = {'Gaze', 'Gaze', 'Gaze', 'Gaze'}; % da modificare
 struct_l1 = {'Set', 'Paradigm', 'Data'};
@@ -152,8 +197,6 @@ dataset_l1 = repmat(dataset_l1, n, 1);
 
 
 %% Dataset based on trials, task states, target IDs 
-
-trials_IDs = 1:trial_labels(end); 
 starts = [1; find(diff(trial_labels(:)) ~= 0) + 1];
 ends   = [starts(2:end) - 1; size(MaskedSpikeCounts,1)];
 
@@ -167,16 +210,12 @@ for array = 1:numel(array_names)
     data_by_trial = cell(numel(starts), 1); 
     mask_by_trial = cell(numel(starts), 2); 
 
-    for i = 1:numel(starts)
-        if trials_IDs(i) == 0 | isnan(trials_IDs) 
-            continue
-        else 
-            data_by_trial_tmp = current_array(starts(i):ends(i), :);
-            data_by_trial{j} = current_array(starts(i):ends(i), :);
-            mask_by_trial{j,1}(:,1) = task_state_labels(starts(i):ends(i))';           
-            mask_by_trial{j,1}(:,2) = num2cell(target_labels(starts(i):ends(i))');
-            j = j + 1;
-        end 
+    for i = 1:numel(starts) 
+        data_by_trial_tmp = current_array(starts(i):ends(i), :);
+        data_by_trial{j} = current_array(starts(i):ends(i), :);
+        mask_by_trial{j,1}(:,1) = task_state_labels(starts(i):ends(i))';           
+        mask_by_trial{j,1}(:,2) = num2cell(target_info(starts(i):ends(i),3)');
+        j = j + 1; 
     end
     data_by_trial(j:end) = [];
     mask_by_trial(j:end) = [];
@@ -209,7 +248,7 @@ for array = 1:numel(array_names)
         end  
         data_by_task_state{j} = data_by_task_state_tmp; 
         vals = cell2mat(mask_by_trial{j,1}(:,2));
-        target_id = vals(vals ~= 1);      % da modificare                                                   
+        target_id = vals(vals ~= 0);      % da modificare                                                   
         has_two = numel(unique(target_id)) >= 2;                                                 
         if has_two  
             warning('target_id contains at least two different numbers.');
@@ -220,7 +259,7 @@ for array = 1:numel(array_names)
         end 
 
         if isempty(target_id)                                                                   
-            target_ids_by_trial(j) = 1; 
+            target_ids_by_trial(j) = 0; 
         else 
             target_ids_by_trial(j) = target_id(1);
         end 
