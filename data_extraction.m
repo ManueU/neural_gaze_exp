@@ -29,8 +29,8 @@ switch (paradigm)
         sets = {set005, set007, set012, set017};        
 end 
 
-get_start_idx = @(S)((find(diff([cellfun(@isempty, S.TaskStateMasks.state_name(:)); 0]) == -1, 1, 'first') - 1));
-idx_start = arrayfun(@(i) get_start_idx(sets{i}), 1:numel(sets)); 
+get_start_idx = @(S) find(S.trial_num == 2, 1);
+idx_start = arrayfun(@(i) get_start_idx(sets{i}), 1:numel(sets));
 
 MaskedSpikeCounts = vertcat( ...
 sets{1}.SpikeCount(idx_start(1):end, 1:5:end), ...
@@ -124,9 +124,10 @@ arrays.sens_m  = MaskedSpikeCounts(:, idx.medial_sens);
 arrays.sens_l  = MaskedSpikeCounts(:, idx.lateral_sens);
 
 %% Data structure definition
-trial_per_set = [32,32,32,32];                                              % da modificare
+trial_per_set = [31,31,31,31];  % da modificare
 n_trials = sum(trial_per_set); 
-paradigm = {'Gaze', 'Gaze', 'Gaze', 'Gaze'};                                % da modificare
+paradigm = {'Motor+Gaze', 'Motor+Gaze', 'Motor+Gaze', 'Motor+Gaze'};   % da modificare
+% paradigm = {'Gaze', 'Gaze', 'Gaze', 'Gaze'};
 struct_l1 = {'Set', 'Paradigm', 'Data'};
 dataset_l1 = cell2struct(repmat({[]}, 1, numel(struct_l1)), struct_l1, 2);
 n = numel(set_numbers);
@@ -274,3 +275,16 @@ for n_set = 1:numel(set_numbers)
 end
 
 dataset = dataset_l1;
+clearvars -except dataset
+
+% save("motor+gaze.mat", "dataset"); 
+% load("free-gaze.mat")
+% data_1 = dataset; 
+% load("gaze.mat")
+% data_2 = dataset; 
+% load("motor.mat")
+% data_3 = dataset;
+% load("motor+gaze.mat");
+% data_4 = dataset; 
+% 
+% dataset = [data_1; data_2; data_3; data_4]; 
