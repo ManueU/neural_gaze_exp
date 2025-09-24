@@ -1,11 +1,11 @@
-close all
+% close all
 clc
 
 
 %% Single channel
-target_des = 2; 
-ch_start = 1;
-ch_end = 96;
+target_des = 6; 
+ch_start = 29;
+ch_end = 29;
 n_sets = 4; 
 bin_size = 0.02;
 
@@ -21,11 +21,14 @@ labels = string(dataset(1).Data(2).Resampled(1).Task_states(:,1));
 % 1: medial arm 
 % 2: lateral hand 
 array_names = ["medial", "lateral"]; 
-colors_target = [ ...
+colors_target = [ ...   
+    0.4  0.6  0.8;    
     0.8  0.4  0.4;  % rosso 
-    0.4  0.6  0.8;  % azzurro 
     0.6  0.8  0.6;  % verde 
+    0.4  0.6  0.8;  % azzurro
     0.8  0.8  0.5]; % giallo 
+    
+
 for array = 1:2
     for channel = ch_start:ch_end
         flag = 0; 
@@ -47,10 +50,10 @@ for array = 1:2
             firing_std  = M_spikes_std  ./ bin_size;  
             firing_sem  = M_spikes_sem  ./ bin_size;  
             
-            w = 20; 
+            w = 25; 
             fr_s   = smoothdata(firing_rate, 'gaussian', w);
             
-            if(max(fr_s) > 5)
+            if(max(fr_s) > 2)
                 if flag == 0
                     figure('Color','w'); hold on
                     if exist('increment_times','var') && ~isempty(increment_times)
@@ -70,6 +73,7 @@ for array = 1:2
                     fill([t_bas fliplr(t_bas)], [upper' fliplr(lower')], 'k', ...
                     'EdgeColor','none', 'FaceAlpha',0.1, 'HandleVisibility','off');
                     plot(t_bas, bas_smooth, 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5, 'HandleVisibility','off');
+                    % yline(baseline_const(channel,array), 'HandleVisibility','off');
 
                     xlabel('Time (s)');
                     ylabel('Firing rate (Hz)');
