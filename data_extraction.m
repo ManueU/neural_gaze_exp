@@ -29,7 +29,7 @@ switch (paradigm)
         sets = {set005, set007, set012, set017};        
 end 
 
-get_start_idx = @(S) find(S.trial_num == 2, 1);
+get_start_idx = @(S) find(S.trial_num == 1, 1);
 idx_start = arrayfun(@(i) get_start_idx(sets{i}), 1:numel(sets));
 
 MaskedSpikeCounts = vertcat( ...
@@ -76,9 +76,9 @@ target_coordinates(empty_idx,1) = 0;
 target_coordinates(empty_idx,2) = 0; 
 
 % Transform the "Remove" task state into "Reach" task state
-for i = 2:numel(task_state_labels)   
+for i = 1:numel(task_state_labels)   
     if strcmp(task_state_labels{i}, 'Remove') | strcmp(task_state_labels{i}, 'Remove1') | strcmp(task_state_labels{i}, 'Remove2')
-        task_state_labels{i} = 'Reach';
+       task_state_labels{i} = 'Reach';
     end
 end
 
@@ -124,10 +124,10 @@ arrays.sens_m  = MaskedSpikeCounts(:, idx.medial_sens);
 arrays.sens_l  = MaskedSpikeCounts(:, idx.lateral_sens);
 
 %% Data structure definition
-trial_per_set = [31,31,31,31];  % da modificare
+trial_per_set = [40,32,32,32];  % da modificare
 n_trials = sum(trial_per_set); 
-paradigm = {'Motor+Gaze', 'Motor+Gaze', 'Motor+Gaze', 'Motor+Gaze'};   % da modificare
-% paradigm = {'Gaze', 'Gaze', 'Gaze', 'Gaze'};
+% paradigm = {'Motor', 'Motor', 'Motor', 'Motor'};   % da modificare
+paradigm = {'Free-gaze', 'Free-gaze', 'Free-gaze', 'Free-gaze'};
 struct_l1 = {'Set', 'Paradigm', 'Data'};
 dataset_l1 = cell2struct(repmat({[]}, 1, numel(struct_l1)), struct_l1, 2);
 n = numel(set_numbers);
@@ -144,20 +144,15 @@ for array = 1:numel(array_names)
     current_array = arrays.(array_names{array});
 
     % Trial split
-    j = 1;
     data_by_trial = cell(numel(starts), 1); 
-    mask_by_trial = cell(numel(starts), 2); 
-
+    mask_by_trial = cell(numel(starts), 1); 
+    j = 1;
     for i = 1:numel(starts) 
-        data_by_trial_tmp = current_array(starts(i):ends(i), :);
         data_by_trial{j} = current_array(starts(i):ends(i), :);
         mask_by_trial{j,1}(:,1) = task_state_labels(starts(i):ends(i))';           
         mask_by_trial{j,1}(:,2) = num2cell(target_info(starts(i):ends(i),3)');
         j = j + 1; 
-    end
-    data_by_trial(j:end) = [];
-    mask_by_trial(j:end) = [];
-    mask_by_trial = mask_by_trial'; 
+    end 
 
     % Task phases split
     data_by_task_state = cell(length(mask_by_trial),1);
@@ -186,7 +181,7 @@ for array = 1:numel(array_names)
         end  
         data_by_task_state{j} = data_by_task_state_tmp; 
         vals = cell2mat(mask_by_trial{j,1}(:,2));
-        target_id = vals(vals ~= 0);      % da modificare                                                   
+        target_id = vals(vals ~= 0);                            % da modificare                                                   
         has_two = numel(unique(target_id)) >= 2;                                                 
         if has_two  
             warning('target_id contains at least two different numbers.');
@@ -209,7 +204,7 @@ for array = 1:numel(array_names)
     data_by_task_state_int = data_by_task_state;
 
     for phase = 1:nPhases
-        len = zeros(nTrials,1);        
+        len = [];        
         for trial = 1:nTrials
             len = [len; size(cell2mat(data_by_task_state{trial,1}(phase,2)),1)];
         end
@@ -277,7 +272,7 @@ end
 dataset = dataset_l1;
 clearvars -except dataset
 
-% save("motor+gaze.mat", "dataset"); 
+save("free-gaze.mat", "dataset"); 
 % load("free-gaze.mat")
 % data_1 = dataset; 
 % load("gaze.mat")
