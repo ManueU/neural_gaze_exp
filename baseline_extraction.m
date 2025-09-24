@@ -36,6 +36,6 @@ for ch = 1:n_channels
     baseline(ch).std = std(mean(reshape(bin, raw_des, nBlocks))); 
     baseline(ch).sem = std(mean(reshape(bin, raw_des, nBlocks)))/sqrt(length(mean(reshape(bin, raw_des, nBlocks)))); 
 end 
-clearvars -except dataset baseline 
+clearvars -except dataset baseline baseline_const
 
 
