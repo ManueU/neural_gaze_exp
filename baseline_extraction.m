@@ -9,7 +9,7 @@ else
     load(fullfile(path, file));
 end
 
-%% Baseline
+%% Baseline based on 60s quiet recording
 counts = cellfun(@numel, baselineStruct.spikes.motor);
 bas_m_medial = counts(1:96)./60;
 bas_m_lateral = counts(97:192)./60;
@@ -37,5 +37,3 @@ for ch = 1:n_channels
     baseline(ch).sem = std(mean(reshape(bin, raw_des, nBlocks)))/sqrt(length(mean(reshape(bin, raw_des, nBlocks)))); 
 end 
 clearvars -except dataset baseline baseline_const
-
-
