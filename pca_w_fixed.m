@@ -1,7 +1,8 @@
 % =========================================================
 % DESCRIZIONE:
-% Esegue PCA sulle singole condizioni per verificare la separabilità
-% nello spazio delle PC in base al target del movimento. 
+% Esegue un’analisi PCA su più condizioni sperimentali per valutare:
+% - la separabilità dei target di movimento nello spazio delle componenti principali (PC);
+% - la relazione tra le diverse condizioni nello stesso spazio PC.
 %
 % La finestra temporale analizzata è fissa rispetto all’onset del reach:
 % w = [-100, +500] ms.
@@ -12,22 +13,19 @@
 % =========================================================
 
 clear 
-close all
+% close all
 clc
 
-start_set = 1;
-end_set = 6; 
+n_sets = 6; 
 n_arrays = 2;      
 n_channels = 96;    
 n_targets = 8; 
 bin_size = 0.02; 
 period_pre = 0.1; 
 period_post = 0.5; 
-PRE = "Pres12";
-POST = "Reach";
 
-filename = {'free-gaze_BCI02.mat'...
-             'motor_BCI02'};
+filename = {'controlled_BCI02.mat', ...
+            'motor_BCI02.'};
 
 %% Costruzione matrice PCA 
 condition = []; 
@@ -65,7 +63,7 @@ for d = 1:numel(filename)
             for target = 1:n_targets
                 M_spikes = [];
     
-                for set = start_set:end_set
+                for set = 1:n_sets
                     idx = find([data(set).Data(array).Resampled.Target_ID] == target); 
     
                     for j = 1:length(idx)
@@ -126,13 +124,6 @@ for c = 1:nCond
         t1 = smoothdata(traj(:,1), 'gaussian', w);
         t2 = smoothdata(traj(:,2), 'gaussian', w);
         t3 = smoothdata(traj(:,3), 'gaussian', w);
-
-        % stile linea
-        if c == 2
-            lineStyle = '--'; % free-gaze
-        else
-            lineStyle = '-';  % motor-only
-        end
 
         plot3(t1, t2, t3, 'Color', colors(t,:), 'LineWidth', 2, ...
               'LineStyle', styles{mod(c-1,numel(styles))+1});
