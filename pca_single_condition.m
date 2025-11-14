@@ -94,7 +94,7 @@ colors = [
     0.890, 0.466, 0.760;  % rosa
 ];
 
-w = 10; 
+w = 11; 
 for t = 1:n_targets
     idx = (t-1)*nbin + (1:nbin);   
     traj = score(idx,1:3);        
