@@ -15,8 +15,7 @@ clear
 close all
 clc
 
-start_set = 1;
-end_set = 6; 
+n_sets = 6; 
 n_arrays = 2;      
 n_channels = 96;    
 n_targets = 8; 
@@ -50,7 +49,7 @@ for array = 1:n_arrays
         for target = 1:n_targets
             M_spikes = [];
 
-            for set = start_set:end_set
+            for set = 1:n_sets
                 idx = find([data(set).Data(array).Resampled.Target_ID] == target); 
 
                 for j = 1:length(idx)
