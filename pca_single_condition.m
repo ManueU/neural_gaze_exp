@@ -1,10 +1,14 @@
 % =========================================================
 % DESCRIZIONE:
 % Esegue PCA sulle singole condizioni per verificare la separabilità
-% nello spazio delle PC in base al target del movimento. La finestra
-% è fissa rispetto all'onset del reach: w = [-100, +500] ms.
+% nello spazio delle PC in base al target del movimento. 
 %
-% Modifica filename, PRE, POST in base alla specifica condizione. 
+% La finestra temporale analizzata è fissa rispetto all’onset del reach:
+% w = [-100, +500] ms.
+%
+% Prima dell’esecuzione, modificare i parametri:
+%   filename : nome del file .mat da caricare
+%   PRE, POST: etichette delle condizioni di interesse
 % =========================================================
 
 clear 
