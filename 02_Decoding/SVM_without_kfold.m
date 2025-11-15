@@ -38,7 +38,7 @@ period_post = 0.5;
 filename = '../00_Data_extraction/free-gaze_BCI02.mat';
 load(filename)
 
-[~, baseName, ext] = fileparts(filename{d});
+[~, baseName, ext] = fileparts(filename);
 ds_name = [baseName ext];
 
 if strcmp(ds_name, 'controlled_BCI02.mat')
