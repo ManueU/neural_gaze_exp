@@ -231,12 +231,12 @@ xticklabels(xLabels);
 xtickangle(30);   % ruota un po’ le label per leggibilità
 ylim([0 100]);
 
-% Colori soft per le due direzioni
-colorA = [0.45 0.62 0.80];  % blu soft
-colorB = [0.80 0.45 0.55];  % rosso soft
+% --- Colori richiesti ---
+bordeaux = [0.45 0.00 0.10];
+grigio   = [0.70 0.70 0.70];
 
-b(1).FaceColor = colorA;    % train i → test j
-b(2).FaceColor = colorB;    % train j → test i
+b(1).FaceColor = bordeaux;   % train i → test j
+b(2).FaceColor = grigio;     % train j → test i
 
 % Linea di chance (se hai nClassi definito)
 if exist('nClassi','var')
@@ -255,7 +255,6 @@ legend({'Train i → Test j', 'Train j → Test i'}, ...
 
 grid on;
 box off;
-
 
 %% Figure (3) - Cross-decoding matrix (confusion matrix)
 figure('Color','w');
