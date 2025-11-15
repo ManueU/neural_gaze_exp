@@ -25,8 +25,8 @@ bin_size = 0.02;
 period_pre = 0.1; 
 period_post = 0.5; 
 
-filename = {'free-gaze_BCI02.mat', ...
-            'motor_BCI02.mat'};
+filename = {'../00_Data_extraction/free-gaze_BCI02.mat', ...
+            '../00_Data_extraction/motor_BCI02.mat'};
 
 %% Costruzione matrice PCA 
 condition = []; 
