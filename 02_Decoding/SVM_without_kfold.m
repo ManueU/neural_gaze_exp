@@ -38,10 +38,13 @@ period_post = 0.5;
 filename = '../00_Data_extraction/free-gaze_BCI02.mat';
 load(filename)
 
-if strcmp(filename, 'controlled_BCI02.mat')
+[~, baseName, ext] = fileparts(filename{d});
+ds_name = [baseName ext];
+
+if strcmp(ds_name, 'controlled_BCI02.mat')
         PRE = "Gaze";
         POST = "Reach";
-    elseif strcmp(filename, 'gaze_BCI02.mat')
+    elseif strcmp(ds_name, 'gaze_BCI02.mat')
         PRE = "Pres12";
         POST = "Gaze";
     else
