@@ -200,7 +200,64 @@ legend(condLab, ...
 grid on;
 box off;
 
-%% Figure (2) - Cross-decoding matrix (confusion matrix)
+%% Figure (2)
+pairs   = nchoosek(1:nCond, 2);    % ogni riga: [i j]
+nPairs  = size(pairs, 1);
+
+vals    = zeros(nPairs, 2);        % colonna 1: i→j, colonna 2: j→i
+xLabels = cell(nPairs, 1);
+
+for p = 1:nPairs
+    i = pairs(p,1);
+    j = pairs(p,2);
+
+    % Accuracy (in %) nelle due direzioni
+    vals(p,1) = acc_cross(i,j) * 100;   % train i → test j
+    vals(p,2) = acc_cross(j,i) * 100;   % train j → test i
+
+    % Etichetta per la coppia
+    xLabels{p} = sprintf('%s ↔ %s', condLab{i}, condLab{j});
+end
+
+figure('Color','w');
+
+b = bar(1:nPairs, vals, 'grouped', 'EdgeColor','none');
+ylabel('Accuracy (%)');
+xlabel('Condition pair');
+title('Bidirectional cross-decoding (train A→B vs B→A)');
+
+xticks(1:nPairs);
+xticklabels(xLabels);
+xtickangle(30);   % ruota un po’ le label per leggibilità
+ylim([0 100]);
+
+% Colori soft per le due direzioni
+colorA = [0.45 0.62 0.80];  % blu soft
+colorB = [0.80 0.45 0.55];  % rosso soft
+
+b(1).FaceColor = colorA;    % train i → test j
+b(2).FaceColor = colorB;    % train j → test i
+
+% Linea di chance (se hai nClassi definito)
+if exist('nClassi','var')
+    chance = (1/nClassi) * 100;
+    hold on;
+    yline(chance, '--k', 'Chance', ...
+        'LabelHorizontalAlignment','right', ...
+        'LabelVerticalAlignment','top', ...
+        'LineWidth', 0.75);
+end
+
+legend({'Train i → Test j', 'Train j → Test i'}, ...
+       'Location','northoutside', ...
+       'Orientation','horizontal', ...
+       'Box','off');
+
+grid on;
+box off;
+
+
+%% Figure (3) - Cross-decoding matrix (confusion matrix)
 figure('Color','w');
 
 imagesc(acc_cross * 100);          
