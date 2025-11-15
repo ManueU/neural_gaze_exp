@@ -25,8 +25,8 @@ n_trials = 32;
 n_targets = 8; 
 bin_size = 0.02; 
 
-filename = {'free-gaze_BCI02.mat',...
-            'motor_BCI02.mat'};
+filename = {'../00_Data_extraction/free-gaze_BCI02.mat', ...
+            '../00_Data_extraction/motor_BCI02.mat'};
  
 %% Decoding over time with SVM
 for d = 1:numel(filename) 
@@ -172,7 +172,7 @@ end
 %% Costruzione matrice PCA 
 condition = []; 
 for d = 1:numel(filename) 
-    disp(filename(d)); 
+    fprintf('\nDataset: %s\n', filename{d}); 
     load(filename{d});
 
     start_idx = round(t_pre(d)/bin_size);

@@ -27,7 +27,7 @@ PRE = "Pres12";
 POST = "Reach";
 
 %% Load 
-filename = 'free-gaze_BCI02.mat';
+filename = '../00_Data_extraction/free-gaze_BCI02.mat';
 load(filename)
 
 %% Costruzione matrice PCA 

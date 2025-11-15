@@ -31,13 +31,16 @@ filename = {'../00_Data_extraction/free-gaze_BCI02.mat', ...
 %% Costruzione matrice PCA 
 condition = []; 
 for d = 1:numel(filename) 
-    disp(filename(d)); 
+    fprintf('\nDataset: %s\n', filename{d}); 
     load(filename{d});
 
-    if strcmp(filename(d), 'controlled_BCI02.mat')
+    [~, baseName, ext] = fileparts(filename{d});
+    ds_name = [baseName ext];
+
+    if strcmp(ds_name, 'controlled_BCI02.mat')
         PRE = "Gaze";
         POST = "Reach";
-    elseif strcmp(filename(d), 'gaze_BCI02.mat')
+    elseif strcmp(ds_name, 'gaze_BCI02.mat')
         PRE = "Pres12";
         POST = "Gaze";
     else
