@@ -56,12 +56,13 @@ filename = { ...
 };
 
 condLab = {'Free-gaze', 'Gaze-on-center', 'Gaze-on-target', 'Gaze-only'};
+nCond = numel(filename);
 
 %% Costruzione vettore Y e matrice X per SVM + k-fold cross-validation
-X_all   = cell(numel(filename),1);
-Y_all   = cell(numel(filename),1);
-classes_all = cell(numel(filename),1);
-for d = 1:numel(filename) 
+X_all   = cell(nCond,1);
+Y_all   = cell(nCond,1);
+classes_all = cell(nCond,1);
+for d = 1:nCond
     fprintf('\nDataset: %s\n', filename{d}); 
     load(filename{d});
 
@@ -96,7 +97,6 @@ for d = 1:numel(filename)
 
     j = 1;
     X = cell(n_trials*n_sets,1);
-
     for set = 1:n_sets
         for trial = 1:n_trials
 
@@ -128,7 +128,7 @@ acc_cross = nan(numel(filename), numel(filename) );
 cm_cross  = cell(numel(filename), numel(filename) );
 
 t = templateSVM('KernelFunction','rbf', 'KernelScale','auto', 'Standardize',true);
-for iTr = 1:numel(filename) 
+for iTr = 1:nCond
     fprintf('\n### TRAIN condizione: %s ###\n', condLab{iTr});
 
     X_train = X_all{iTr};
@@ -140,7 +140,7 @@ for iTr = 1:numel(filename)
         'Coding', 'onevsall', ...
         'ClassNames', classes);
 
-    for iTe = 1:numel(filename) 
+    for iTe = 1:nCond
         fprintf('   -> TEST su: %s\n', condLab{iTe});
 
         X_test = X_all{iTe};
@@ -158,36 +158,18 @@ for iTr = 1:numel(filename)
     end
 end
 
-%% --- (3) HEATMAP DEL CROSS-DECODING ---
-figure('Color','w');
-imagesc(acc_cross * 100);
-colormap(copper);  
-colorbar;
-caxis([0 100]);
-axis square;
-
-xticks(1:numel(filename) );
-yticks(1:numel(filename) );
-xticklabels(condLab);
-yticklabels(condLab);
-
-xlabel('Test condition');
-ylabel('Train condition');
-title('Cross-decoding accuracy (%)');
-
-%% --- (4) Barplot del cross-decoding (colori pastello) ---
+%% Figure (1) - Barplot del cross-decoding
 figure('Color','w');
 
 % accuracy in percentuale
-b = bar(1:numel(filename) , acc_cross * 100, 'grouped', 'EdgeColor', 'none');
+b = bar(1:nCond, acc_cross * 100, 'grouped', 'EdgeColor', 'none');
 ylabel('Accuracy (%)');
-xlabel('TRAIN condition');
+xlabel('Train condition');
 title('Cross-decoding accuracy');
-xticks(1:numel(filename) );
+xticks(1:nCond);
 xticklabels(condLab);
 ylim([0 100]);
 
-% --- Palette pastello ---
 greenPastel = [
     0.05 0.20 0.10   % night green (dark forest)
     0.25 0.45 0.30   % darker soft green
@@ -196,7 +178,6 @@ greenPastel = [
 ];
 
 
-% Assegno i colori alle barre (riciclandoli se servono)
 for k = 1:numel(filename) 
     colorIndex = mod(k-1, size(greenPastel,1)) + 1;
     b(k).FaceColor = greenPastel(colorIndex, :);
@@ -212,19 +193,17 @@ yline(chance, '--k', 'Chance', ...
 
 % Legenda
 legend(condLab, ...
-    'Location','northoutside', ...
+    'Location','southoutside', ...
     'Orientation','horizontal', ...
     'Box','off');
 
 grid on;
 box off;
-clear set
-set(gca,'FontSize',11);
 
-%% --- Cross-decoding matrix in stile confusion matrix ---
+%% Figure (2) - Cross-decoding matrix (confusion matrix)
 figure('Color','w');
 
-imagesc(acc_cross * 100);          % percentuale
+imagesc(acc_cross * 100);          
 blueNightMap = [
     1.00 1.00 1.00   % white
     0.85 0.92 1.00   % very light blue
@@ -235,7 +214,7 @@ colormap(interp1(1:4, blueNightMap, linspace(1,4,256)));
 
 
 colorbar;
-caxis([0 100]);
+clim([0 100]);
 axis square;
 
 xticks(1:numel(filename));
@@ -247,5 +226,4 @@ xlabel('Test condition');
 ylabel('Train condition');
 title('Cross-decoding accuracy (%)');
 
-set(gca, 'FontSize', 12);
 
