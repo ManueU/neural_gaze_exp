@@ -32,7 +32,7 @@
 %
 %  Visualizzazione finale:
 %    - singola figura con le curve di overall accuracy di tutte
-%      le condizioni, allineate a t = 0 = onset dello stato Reach
+%      le condizioni, allineate a t = 0 = onset dello stato reach
 %    - indicazione del livello di chance
 %
 %  Parametri principali modificabili:
