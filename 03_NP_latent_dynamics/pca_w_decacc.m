@@ -121,7 +121,7 @@ for d = 1:numel(filename)
         acc_smooth = smoothdata(acc_class(:, c), 'gaussian', w_smooth);
         plot(t', acc_smooth, 'LineWidth', 1.0, 'Color', [colors(c,:),  alpha], 'HandleVisibility','off'), hold on
     end
-    acc_smooth_overall = smoothdata(acc_overall, 'gaussian', 4);
+    acc_smooth_overall = smoothdata(acc_overall, 'gaussian', w_smooth);
     plot(t', acc_overall*100, 'LineWidth', 1.5, 'Color', 'k', 'DisplayName', 'Overall'), hold on
 
     if exist('increment_times','var') && ~isempty(increment_times)
