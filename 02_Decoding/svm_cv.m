@@ -1,4 +1,5 @@
 function [acc, cm] = svm_cv(X, Y, k_fold)
+    rng(99)    
     cv = cvpartition(Y, 'KFold', k_fold);
     Y_true = []; Y_pred = [];
 
@@ -7,7 +8,7 @@ function [acc, cm] = svm_cv(X, Y, k_fold)
         trainIdx = training(cv, k);
         testIdx  = test(cv, k);
 
-        model = fitcecoc(X(trainIdx,:), Y(trainIdx), 'Learners', t, 'Coding', 'onevsone');
+        model = fitcecoc(X(trainIdx,:), Y(trainIdx), 'Learners', t, 'Coding', 'onevsall');
         yhat  = predict(model, X(testIdx,:));
 
         Y_true = [Y_true; Y(testIdx)];
