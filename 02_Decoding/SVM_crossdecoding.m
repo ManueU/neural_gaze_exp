@@ -1,40 +1,50 @@
 % =========================================================
 % DESCRIZIONE:
-%  Script per addestrare e valutare un decoder di posizione
-%  del target di reach basato sul firing rate medio, per
-%  diverse condizioni sperimentali (free-gaze, motor-only,
-%  controlled-gaze, gaze-only).
+% Script per estrarre feature di firing rate medio e
+% valutare il cross-decoding della posizione del target
+% di reach tra diverse condizioni sperimentali
+% (free-gaze, motor-only, controlled-gaze, gaze-only).
 %
-%  Per ciascun file .mat in 'filename':
-%    - viene caricato il dataset corrispondente
-%    - vengono selezionati automaticamente gli stati PRE e POST
-%      (es. 'Pres12', 'Gaze', 'Reach') in base al nome del file
-%    - per ogni trial e per tutti i canali/array vengono estratti
-%      i conteggi di spike in due finestre temporali:
-%         * fase PRE  : ultimi 100 ms dello stato PRE
-%         * fase POST : primi 500 ms dello stato POST
-%    - le due finestre (PRE+POST) vengono concatenate nel tempo
-%      e si calcola il firing rate medio per canale nel trial
-%      (Hz), ottenendo la matrice delle feature X
-%    - si costruisce il vettore etichette Y (Target_ID)
-%    - si esegue una k-fold cross-validation (k = 5) tramite
-%      la funzione esterna svm_cv per addestrare un SVM multiclass
-%      (fitcecoc con kernel RBF) e stimare l’accuratezza media
-%    - si visualizza la confusion matrix per ciascuna condizione
+% Per ciascun file .mat in 'filename':
+% - viene caricato il dataset corrispondente
+% - vengono selezionati automaticamente gli stati PRE e POST
+% (es. 'Pres12', 'Gaze', 'Reach') in base al nome del file
+% - per ogni trial, set e per tutti i canali/array vengono estratti
+% i conteggi di spike in due finestre temporali:
+% * fase PRE : ultimi 'period_pre' secondi dello stato PRE
+% * fase POST : primi 'period_post' secondi dello stato POST
+% - le due finestre (PRE+POST) vengono concatenate nel tempo
+% e si calcola il firing rate medio per canale nel trial (Hz),
+% ottenendo la matrice delle feature X
+% - si costruisce il vettore etichette Y (Target_ID) e il vettore
+% delle classi distinte 'classes'
 %
-%  Al termine:
-%    - le accuratezze di tutte le condizioni vengono raccolte
-%      in un barplot con indicazione del livello di chance.
+% Decoding:
+% - per ogni condizione di training (riga di 'condLab'):
+% * si addestra un SVM multiclass (fitcecoc con kernel RBF)
+% sui dati di quella condizione
+% * il decoder viene testato su TUTTE le condizioni
+% (inclusa quella di training), ottenendo per ogni coppia
+% train–test:
+% · la confusion matrix (cm_cross)
+% · l’accuratezza globale (acc_cross)
 %
-%  Finestra temporale analizzata:
-%     w = [-100, +500] ms implementata come:
-%       - ultimi 100 ms dello stato PRE
-%       - primi 500 ms dello stato POST
+% Visualizzazioni finali:
+% (1) Barplot dell’accuratezza di cross-decoding
+% (righe: condizione di training, barre: condizione di test)
+% con indicazione del livello di chance (1 / nClassi).
+% (2) Barplot delle accuratezze bidirezionali per tutte
+% le coppie di condizioni (train A→test B vs train B→test A).
+% (3) Matrice di cross-decoding con train sulle righe e test 
+% sulle colonne (confusion matrix). 
 %
-%  Prima dell’esecuzione, modificare se necessario:
-%    - l’elenco dei file .mat nel cell array 'filename'
-%    - i parametri bin_size, period_pre, period_post
-%    - la funzione svm_cv (k-fold, tipo di SVM, ecc.)
+% Finestra temporale analizzata:
+% w = [-100, +500] ms 
+%
+% Prima dell’esecuzione, modificare se necessario:
+% - l’elenco dei file .mat nel cell array 'filename'
+% - i parametri n_sets, n_arrays, n_trials
+% - i parametri bin_size, period_pre, period_post
 % =========================================================
 
 clearvars
@@ -58,10 +68,9 @@ filename = { ...
 condLab = {'Free-gaze', 'Gaze-on-center', 'Gaze-on-target', 'Gaze-only'};
 nCond = numel(filename);
 
-%% Costruzione vettore Y e matrice X per SVM + k-fold cross-validation
+%% Costruzione vettore Y e matrice X per SVM
 X_all   = cell(nCond,1);
 Y_all   = cell(nCond,1);
-classes_all = cell(nCond,1);
 for d = 1:nCond
     fprintf('\nDataset: %s\n', filename{d}); 
     load(filename{d});
@@ -124,8 +133,8 @@ for d = 1:nCond
 end
 
 nClassi = numel(classes);
-acc_cross = nan(numel(filename), numel(filename) );
-cm_cross  = cell(numel(filename), numel(filename) );
+acc_cross = nan(nCond, nCond);
+cm_cross  = cell(nCond, nCond);
 
 t = templateSVM('KernelFunction','rbf', 'KernelScale','auto', 'Standardize',true);
 for iTr = 1:nCond
@@ -165,7 +174,7 @@ figure('Color','w');
 b = bar(1:nCond, acc_cross * 100, 'grouped', 'EdgeColor', 'none');
 ylabel('Accuracy (%)');
 xlabel('Train condition');
-title('Cross-decoding accuracy');
+title('Cross-decoding analysis');
 xticks(1:nCond);
 xticklabels(condLab);
 ylim([0 100]);
@@ -178,7 +187,7 @@ greenPastel = [
 ];
 
 
-for k = 1:numel(filename) 
+for k = 1:nCond
     colorIndex = mod(k-1, size(greenPastel,1)) + 1;
     b(k).FaceColor = greenPastel(colorIndex, :);
 end
@@ -215,30 +224,41 @@ for p = 1:nPairs
     vals(p,1) = acc_cross(i,j) * 100;   % train i → test j
     vals(p,2) = acc_cross(j,i) * 100;   % train j → test i
 
-    % Etichetta per la coppia
-    xLabels{p} = sprintf('%s ↔ %s', condLab{i}, condLab{j});
 end
 
 figure('Color','w');
 
 b = bar(1:nPairs, vals, 'grouped', 'EdgeColor','none');
 ylabel('Accuracy (%)');
-xlabel('Condition pair');
-title('Bidirectional cross-decoding (train A→B vs B→A)');
+title('Cross-decoding analysis');
 
-xticks(1:nPairs);
-xticklabels(xLabels);
-xtickangle(30);   % ruota un po’ le label per leggibilità
+ax = gca;
+ax.XTick = 1:nPairs;
+ax.XTickLabel = {};
 ylim([0 100]);
+yl = ylim;
+yText = yl(1)-2;
 
-% --- Colori richiesti ---
+xx = 1:nPairs;
+for p = 1:nPairs
+    i = pairs(p,1);
+    j = pairs(p,2);
+
+    labelStr = sprintf('%s\nvs.\n%s', condLab{i}, condLab{j});
+
+    text(xx(p), yText, labelStr, ...
+        'HorizontalAlignment','center', ...
+        'VerticalAlignment','top', ...
+        'FontSize', 9);
+end
+
+
 bordeaux = [0.45 0.00 0.10];
 grigio   = [0.70 0.70 0.70];
-
 b(1).FaceColor = bordeaux;   % train i → test j
 b(2).FaceColor = grigio;     % train j → test i
 
-% Linea di chance (se hai nClassi definito)
+% Linea di chance
 if exist('nClassi','var')
     chance = (1/nClassi) * 100;
     hold on;
@@ -273,8 +293,8 @@ colorbar;
 clim([0 100]);
 axis square;
 
-xticks(1:numel(filename));
-yticks(1:numel(filename));
+xticks(1:nCond);
+yticks(1:nCond);
 xticklabels(condLab);
 yticklabels(condLab);
 
