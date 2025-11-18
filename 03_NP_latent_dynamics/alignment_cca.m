@@ -44,7 +44,7 @@ disp('Canonical correlations (CCA):');
 disp(r);
 
 
-%% Figure (1) - trajectories in canonical space)
+%% Figure (1) - trajectories in canonical space
 figure('Color','w'); hold on;
 axis equal; grid on;
 xlabel('Can1'); ylabel('Can2'); zlabel('Can3');
