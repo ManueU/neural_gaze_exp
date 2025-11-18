@@ -13,7 +13,7 @@
 % =========================================================
 
 clearvars
-% close all
+close all
 clc
 
 sets = [1,2,4,5,6]; 
@@ -166,10 +166,12 @@ else
 
     for c = 1:nCond
         % Estrai solo la parte prima del primo "_"
-        [namePart, ~] = strtok(filename{c}, '_');
+        [~, baseName, ~] = fileparts(filename{c});
+        [namePart, ~] = strtok(baseName, '_');
         legEntries{c} = namePart;
         % Dummy per linea condizione
-        hStyles(c) = plot3(nan,nan,nan, styles{c}, 'Color','k', 'LineWidth',2);
+        ls = styles{mod(c-1, numel(styles))+1};
+        hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
     end
 
     legEntries{nCond+1} = 'Start';
@@ -196,45 +198,7 @@ grid on; axis equal;
 % close(outputVideo);
 
 
-%% Procrustes alignment
-% Z-score usando media e sigma globali (muZ, sigmaZ)
-Xz_cond1 = (condition_sep{1} - muZ) ./ sigmaZ;
-Xz_cond2 = (condition_sep{2} - muZ) ./ sigmaZ;
 
-% Proiezione sulle PC comuni
-scores1 = Xz_cond1 * coeff;   
-scores2 = Xz_cond2 * coeff;
 
-% Parametri per il confronto Procrustes
-pc_idx = 1:3;                     % PC da usare 
-T = nbin;   
-K = numel(pc_idx);  
 
-% Seleziona solo le PC desiderate
-scores1 = scores1(:, pc_idx);     
-scores2 = scores2(:, pc_idx);     
 
-% Procrustes per ogni target
-d_targets = zeros(n_targets,1);
-for tg = 1:n_targets
-    % righe di X/Y corrispondenti al target tg
-    idx = (tg-1)*T + (1:T);    
-
-    Xt = scores1(idx, :);     
-    Yt = scores2(idx, :);      
-
-    % Procrustes per il singolo target
-    [d_t, Yt_aligned, transform_t] = procrustes(Xt, Yt, ...
-        'scaling', true, 'reflection', false);
-
-    d_targets(tg) = d_t;
-end
-disp('Distanza di Procrustes per target:');
-disp(d_targets);
-
-%% Figure (2)
-figure('Color', 'w')
-bar(d_targets);
-xlabel('Target');
-ylabel('Distanza di Procrustes');
-title('Similarità della forma della traiettoria tra condizioni');
