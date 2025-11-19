@@ -12,7 +12,7 @@
 % =========================================================
 
 clearvars 
-close all
+% close all
 clc
 
 sets_pca = [1,2,4,5,6];
@@ -27,7 +27,7 @@ PRE = "Pres12";
 POST = "Reach";
 
 %% Load 
-filename = '../00_Data_extraction/free-gaze_BCI02.mat';
+filename = '../00_Data_extraction/motor_BCI02.mat';
 load(filename)
 
 %% Costruzione matrice PCA 
@@ -74,13 +74,50 @@ for array = 1:n_arrays
 
 end 
 
+%% Filtraggio neuroni poco informativi
+% varianza e firing rate medio per neurone
+meanFR = mean(pca_matrix_array, 1);          % Hz
+varFR  = var(pca_matrix_array, 0, 1);
+
+minMeanFR = 1;       % Hz: neuroni con FR medio < 1 Hz vengono scartati
+minVarFR  = 0.5;     % varianza minima (su firing rate in Hz)
+
+valid_cols = (meanFR > minMeanFR) & (varFR > minVarFR);
+fprintf('\nNeuroni totali: %d, neuroni tenuti dopo filtro: %d\n', numel(meanFR), sum(valid_cols));
+
+pca_matrix_array = pca_matrix_array(:, valid_cols);
 
 %% PCA
 [Xz, muZ, sigmaZ] = zscore(pca_matrix_array, 0, 1); 
 [coeff, score, latent, tsquared, explained] = pca(Xz, 'Algorithm','svd');
 
+%% Explained variance
+fprintf('\nVarianza spiegata:\n');
+for k = [1 3 5 10 20 50]
+    if k <= numel(explained)
+        fprintf('  Prime %2d PC: %5.2f %%\n', k, sum(explained(1:k)));
+    end
+end
+fprintf('  Totale     : %5.2f %%\n\n', sum(explained));
 
-%% Figure (1) - PCA
+maxPCs = min(50, size(coeff,2));
+cumExplained = cumsum(explained);
+cumExplained = cumExplained(1:maxPCs);
+
+
+%% Figure (1)
+figure('Color','white'); hold on
+
+plot(1:maxPCs, cumExplained, 'b', 'LineWidth', 1);
+xlabel('PCs');
+ylabel('Cum. neural var. expl. (%)');
+xlim([1 maxPCs]);
+ylim([0 100]);
+grid on;
+box off;
+title('Cumulative neural variance explained');
+
+%% Figure (2) - PCA
 nbin = pre_bins + post_bins;           
 
 figure('Color','White'); hold on
@@ -133,6 +170,7 @@ bar(abs(coeff(:,1:nPC)), 'stacked');
 xlabel('Channel'); ylabel('|loading|');
 legend(compose('PC%d',1:nPC), 'Location','northeastoutside');
 title('Loadings');
+box off;
 grid on;
 
 
