@@ -55,54 +55,49 @@
 
 
 %% CCA across / within / control
-
 clearvars
-% close all
+close all
 clc
 
-%% Parametri di base
-sets       = [1,2,4,5,6]; 
-n_sets     = numel(sets); 
-n_arrays   = 2;      
+sets = [1,2,4,5,6]; 
+n_sets = numel(sets); 
+n_arrays = 2;      
 n_channels = 96;    
-n_targets  = 8; 
+n_targets = 8; 
 
-bin_size    = 0.02;   % [s]
-period_pre  = 0.1;    % [s] finestra prima dell'evento
-period_post = 0.5;    % [s] finestra dopo l'evento
+bin_size = 0.02;  
+period_pre = 0.1;    
+period_post = 0.5;    
 
-pre_bins  = max(1, round(period_pre/bin_size));
+pre_bins = max(1, round(period_pre/bin_size));
 post_bins = max(1, round(period_post/bin_size));
-nbin      = pre_bins + post_bins;
+nbin = pre_bins + post_bins;
 
 filename = { ...
-    '../00_Data_extraction/controlled_BCI02.mat', ...
-    '../00_Data_extraction/motor_BCI02.mat'};
+    '../00_Data_extraction/free-gaze_BCI02.mat', ...
+    '../00_Data_extraction/controlled_BCI02.mat'};
 
 nCond = numel(filename);
 
 %% Matrici per PCA, within e control
-condition_all      = [];                    % tutte le condizioni, finestra "comportamentale"
+condition_all      = [];                    % tutte le condizioni su finestra onset reach
 condition_A_all    = [];                    % split A per tutte le condizioni
 condition_B_all    = [];                    % split B per tutte le condizioni
 condition_ctrl_all = [];                    % finestre di controllo per tutte le condizioni
 
-condition_sep_all  = cell(nCond,1);         % per condizione (behavioural)
+condition_sep_all  = cell(nCond,1);         % per condizione (onset reach window)
 condition_sep_A    = cell(nCond,1);         % per condizione (within A)
 condition_sep_B    = cell(nCond,1);         % per condizione (within B)
 condition_sep_ctrl = cell(nCond,1);         % per condizione (control windows)
 
-
 %% Costruzione delle matrici
 for d = 1:nCond
-    
     fprintf('\nDataset: %s\n', filename{d}); 
     load(filename{d});  
     
     [~, baseName, ext] = fileparts(filename{d});
     ds_name = [baseName ext];
 
-    % Stati PRE/POST a seconda del dataset
     if strcmp(ds_name, 'controlled_BCI02.mat')
         PRE  = "Gaze";
         POST = "Reach";
@@ -120,7 +115,6 @@ for d = 1:nCond
         error('Stati PRE/POST non trovati: controlla PRE/POST per il dataset %s', ds_name);
     end
 
-    % Matrici per il dataset d-esimo
     pca_matrix_array_all  = []; 
     pca_matrix_array_A    = [];
     pca_matrix_array_B    = [];
@@ -157,10 +151,10 @@ for d = 1:nCond
                         trial_counter = trial_counter + 1;
                         tr = idx_trials(j);
 
-                        % ---------- finestra COMPORTAMENTALE (pre+post) ----------
-                        tmp_pre  = data(set).Data(array).Resampled(tr).Task_states{idx_pres,  2}(end-pre_bins+1:end, channel); 
-                        tmp_post = data(set).Data(array).Resampled(tr).Task_states{idx_reach, 2}(1:post_bins,        channel); 
-                        matrix   = [tmp_pre; tmp_post];      % (nbin x 1)
+                        % ---------- finestra onset reach ----------
+                        tmp_pre = data(set).Data(array).Resampled(tr).Task_states{idx_pres,  2}(end-pre_bins+1:end, channel); 
+                        tmp_post = data(set).Data(array).Resampled(tr).Task_states{idx_reach, 2}(1:post_bins, channel); 
+                        matrix = [tmp_pre; tmp_post];      
                         
                         M_spikes_all = [M_spikes_all, matrix];
 
@@ -173,19 +167,14 @@ for d = 1:nCond
 
                         % ---------- finestra di CONTROLLO  ----------
                         % concateno tutti gli stati del trial (trial+intertrial)
-                        trial_full = [];
-                        nStates = size(data(set).Data(array).Resampled(tr).Task_states,1);
-                        for s = 1:nStates
-                            trial_full = [trial_full; ...
-                                data(set).Data(array).Resampled(tr).Task_states{s,2}(:, channel)];
-                        end
+                        trial_full = data(set).Data(array).Resampled(tr).Trial(:, channel);                        
 
                         L = size(trial_full,1);
                         if L >= nbin
                             start_idx = randi([1, L - nbin + 1]);
                             ctrl_seg  = trial_full(start_idx:start_idx+nbin-1);
                         else
-                            % fallback: se il trial è troppo corto, uso la finestra comportamentale
+                            % se il trial è troppo corto, uso la finestra onset reach
                             ctrl_seg = matrix;
                         end
                         M_spikes_ctrl = [M_spikes_ctrl, ctrl_seg];
@@ -198,19 +187,19 @@ for d = 1:nCond
                 if ~isempty(M_spikes_A)
                     M_spikes_mean_A = mean(M_spikes_A, 2);
                 else
-                    M_spikes_mean_A = M_spikes_mean_all;
+                    disp("Error on M_spikes_A");
                 end
 
                 if ~isempty(M_spikes_B)
                     M_spikes_mean_B = mean(M_spikes_B, 2);
                 else
-                    M_spikes_mean_B = M_spikes_mean_all;
+                    disp("Error on M_spikes_B");
                 end
 
                 if ~isempty(M_spikes_ctrl)
                     M_spikes_mean_ctrl = mean(M_spikes_ctrl, 2);
                 else
-                    M_spikes_mean_ctrl = M_spikes_mean_all;
+                    disp("Error on M_spikes_ctrl");
                 end
     
                 firing_rate_all  = [firing_rate_all;  M_spikes_mean_all  ./ bin_size];
@@ -248,20 +237,26 @@ for d = 1:nCond
     condition_sep_ctrl{d} = pca_matrix_array_ctrl;
 end 
 
+%% Filtraggio neuroni poco informativi
+% varianza e firing rate medio per neurone
+meanFR = mean(condition_all, 1);          % Hz
+varFR  = var(condition_all, 0, 1);
 
-%% Rimozione colonne a varianza nulla
-col_std   = std(condition_all, 0, 1);
-valid_cols = col_std > 0;
+minMeanFR = 1;       % Hz: neuroni con FR medio < 1 Hz vengono scartati
+minVarFR  = 0.5;     % varianza minima (su firing rate in Hz)
 
-condition_all      = condition_all(:,      valid_cols);
-condition_A_all    = condition_A_all(:,    valid_cols);
-condition_B_all    = condition_B_all(:,    valid_cols);
+valid_cols = (meanFR > minMeanFR) & (varFR > minVarFR);
+fprintf('\nNeuroni totali: %d, neuroni tenuti dopo filtro: %d\n', numel(meanFR), sum(valid_cols));
+
+condition_all      = condition_all(:, valid_cols);
+condition_A_all    = condition_A_all(:, valid_cols);
+condition_B_all    = condition_B_all(:, valid_cols);
 condition_ctrl_all = condition_ctrl_all(:, valid_cols);
 
 for d = 1:nCond
-    condition_sep_all{d}  = condition_sep_all{d}(:,  valid_cols);
-    condition_sep_A{d}    = condition_sep_A{d}(:,    valid_cols);
-    condition_sep_B{d}    = condition_sep_B{d}(:,    valid_cols);
+    condition_sep_all{d}  = condition_sep_all{d}(:, valid_cols);
+    condition_sep_A{d}    = condition_sep_A{d}(:, valid_cols);
+    condition_sep_B{d}    = condition_sep_B{d}(:, valid_cols);
     condition_sep_ctrl{d} = condition_sep_ctrl{d}(:, valid_cols);
 end
 
@@ -339,7 +334,7 @@ xlabel(sprintf('PC1 (%.1f%%)', explained(1)));
 ylabel(sprintf('PC2 (%.1f%%)', explained(2)));
 zlabel(sprintf('PC3 (%.1f%%)', explained(3)));
 grid on; axis equal; 
-title('Traiettorie PCA');
+title('PCA');
 
 
 %% CCA ACROSS condizioni
@@ -355,15 +350,17 @@ Xcca_across = zscore(scores1(:, pc_idx_cca));
 Ycca_across = zscore(scores2(:, pc_idx_cca));
 
 [A_across, B_across, r_across, U_across, V_across, stats_across] = canoncorr(Xcca_across, Ycca_across); 
-disp('Canonical correlations (CCA ACROSS condizioni):');
+disp('CCA across conditions:');
 disp(r_across);
 
 
 %% Figure (2) - Traiettorie nello spazio canonico (across)
-figure('Color','w'); hold on;
-axis equal; grid on;
+figure('Color','w'); 
+hold on;
+axis equal; 
+grid on;
 xlabel('Can1'); ylabel('Can2'); zlabel('Can3');
-title('Traiettorie nello spazio canonico (ACROSS)');
+title('CCA across');
 
 for tg = 1:n_targets
     idx = (tg-1)*nbin + (1:nbin);
@@ -386,12 +383,39 @@ for tg = 1:n_targets
     plot3(v1, v2, v3, '--', ...
         'Color', colors(tg,:), 'LineWidth', 2, ...
         'DisplayName', sprintf('Target %d - cond2', tg));
+
+        % marker inizio/fine per condizione 1
+    plot3(u1(1), u2(1), u3(1), 'o', ...
+              'MarkerSize', 8, 'MarkerFaceColor', colors(tg,:), ...
+              'MarkerEdgeColor', colors(tg,:), 'HandleVisibility','off');
+    plot3(u1(end), u2(end), u3(end), '^', ...
+              'MarkerSize', 8, 'MarkerFaceColor', colors(tg,:), ...
+              'MarkerEdgeColor', colors(tg,:), 'HandleVisibility','off');
+
+    % marker inizio/fine per condizione 2 allineata
+    plot3(v1(1), v2(1), v3(1), 'o', ...
+              'MarkerSize', 8, 'MarkerFaceColor', colors(tg,:), ...
+              'MarkerEdgeColor', colors(tg,:), 'HandleVisibility','off');
+    plot3(v1(end), v2(end), v3(end), '^', ...
+              'MarkerSize', 8, 'MarkerFaceColor', colors(tg,:), ...
+              'MarkerEdgeColor', colors(tg,:), 'HandleVisibility','off');
 end
 
-h1 = plot3(nan,nan,nan,'-k','LineWidth',2,'DisplayName','Condizione 1');
-h2 = plot3(nan,nan,nan,'--k','LineWidth',2,'DisplayName','Condizione 2');
-legend([h1 h2],'Location','northeastoutside');
+hStart = plot3(nan,nan,nan, 'o', 'Color','k', 'MarkerFaceColor','k');
+hEnd   = plot3(nan,nan,nan, '^', 'Color','k', 'MarkerFaceColor','k');
 
+styles = {'-','--'};
+condNames = cell(1,2);
+for c = 1:2
+    [~, baseName] = fileparts(filename{c});
+    [namePart, ~] = strtok(baseName, '_');
+    condNames{c} = namePart;
+    ls = styles{c};
+    hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
+end
+
+legend([hStyles hStart hEnd], {condNames{:}, 'Start', 'End'}, ...
+       'Location','northeastoutside');
 
 %% CCA WITHIN (upper bound) sulla condizione 1
 Xz_cond1_A = (condition_sep_A{1} - muZ) ./ sigmaZ;
@@ -404,7 +428,7 @@ X1 = zscore(scores1_A(:, pc_idx_cca));
 X2 = zscore(scores1_B(:, pc_idx_cca));
 
 [A_w, B_w, r_within, U_within, V_within] = canoncorr(X1, X2); 
-disp('Canonical correlations WITHIN condizione 1 (upper bound):');
+disp('CCA within condition:');
 disp(r_within);
 
 
@@ -418,7 +442,6 @@ scores_ctrl2 = Xz_ctrl2 * coeff;
 X_ctrl = zscore(scores_ctrl1(:, pc_idx_cca));
 Y_ctrl = zscore(scores_ctrl2(:, pc_idx_cca));
 
-% shuffle delle righe per rompere la corrispondenza target×tempo
 perm_rows  = randperm(size(Y_ctrl,1));
 Y_ctrl_shuf = Y_ctrl(perm_rows, :);
 
@@ -427,7 +450,7 @@ disp('Canonical correlations CONTROL (lower bound):');
 disp(r_control);
 
 
-%% Figure (3) - Figura finale: Across vs Within vs Control
+%% Figure (3) - Across vs Within vs Control
 figure('Color','w'); 
 hold on;
 
@@ -435,10 +458,10 @@ plot(r_across,  '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
     'Color', [0.2 0.6 0.2], 'DisplayName', 'Across conditions');
 
 plot(r_within,  '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
-    'Color', [0.2 0.2 0.8], 'DisplayName', 'Within (upper bound)');
+    'Color', [0.2 0.2 0.8], 'DisplayName', 'Within');
 
 plot(r_control, '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
-    'Color', [0.5 0.5 0.5], 'DisplayName', 'Control (lower bound)');
+    'Color', [0.5 0.5 0.5], 'DisplayName', 'Control');
 
 ylim([0 1])
 xlabel('Canonical dimension');
