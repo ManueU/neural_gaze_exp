@@ -12,6 +12,9 @@
 %   PRE, POST: etichette delle condizioni di interesse
 % =========================================================
 
+% 1: medial arm 
+% 2: lateral hand 
+
 clearvars
 close all
 clc
@@ -94,17 +97,33 @@ for d = 1:numel(filename)
     condition_sep(d) = {pca_matrix_array};
 end 
 
-col_std = std(condition, 0, 1);          % deviazione standard per colonna
-valid_cols = col_std > 0;                % colonne con varianza > 0
+%% Filtraggio neuroni poco informativi
+% varianza e firing rate medio per neurone
+meanFR = mean(condition, 1);          % Hz
+varFR  = var(condition, 0, 1);
+
+minMeanFR = 1;       % Hz: neuroni con FR medio < 1 Hz vengono scartati
+minVarFR  = 0.5;     % varianza minima (su firing rate in Hz)
+
+valid_cols = (meanFR > minMeanFR) & (varFR > minVarFR);
+fprintf('\nNeuroni totali: %d, neuroni tenuti dopo filtro: %d\n', numel(meanFR), sum(valid_cols));
+
 condition = condition(:, valid_cols);
 for d = 1:numel(condition_sep)
     condition_sep{d} = condition_sep{d}(:, valid_cols);
 end
 
-
 %% PCA
 [Xz, muZ, sigmaZ] = zscore(condition, 0, 1); 
 [coeff, score, latent, tsquared, explained] = pca(Xz, 'Algorithm','svd');
+
+fprintf('\nVarianza spiegata:\n');
+for k = [1 3 5 10 20 50]
+    if k <= numel(explained)
+        fprintf('  Prime %2d PC: %5.2f %%\n', k, sum(explained(1:k)));
+    end
+end
+fprintf('  Totale     : %5.2f %%\n\n', sum(explained));
 
 
 %% Figure (1) - PCA
