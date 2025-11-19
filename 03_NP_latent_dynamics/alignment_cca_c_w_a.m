@@ -468,8 +468,8 @@ disp(r_control);
 
 
 %% Figure (3) - Across vs Within vs Control
-% r_within_mean = mean( cell2mat(r_within), 1 );
-r_within = cell2mat(r_within);
+r_within_mean = mean( cell2mat(r_within), 1 );
+% r_within = cell2mat(r_within);
 
 figure('Color','w'); 
 hold on;
@@ -477,14 +477,14 @@ hold on;
 plot(r_across,  '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
     'Color', [0.2 0.6 0.2], 'DisplayName', 'Across conditions')
 
-plot(r_within(1,:), '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
-    'Color', [0.2 0.2 0.8], 'DisplayName', 'Within cond1');
+% plot(r_within(1,:), '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
+%     'Color', [0.2 0.2 0.8], 'DisplayName', 'Within cond1');
+% 
+% plot(r_within(2,:), '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
+%     'Color', [0.2 0.2 0.8], 'DisplayName', 'Within cond2');
 
-plot(r_within(2,:), '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
-    'Color', [0.2 0.2 0.8], 'DisplayName', 'Within cond2');
-
-% plot(r_within_mean, '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
-%     'Color', [0.2 0.2 0.8], 'DisplayName', 'Within (mean)');
+plot(r_within_mean, '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
+    'Color', [0.2 0.2 0.8], 'DisplayName', 'Within (mean)');
 
 plot(r_control, '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
     'Color', [0.5 0.5 0.5], 'DisplayName', 'Control');
