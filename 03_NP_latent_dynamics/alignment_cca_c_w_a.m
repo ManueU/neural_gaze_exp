@@ -417,19 +417,36 @@ end
 legend([hStyles hStart hEnd], {condNames{:}, 'Start', 'End'}, ...
        'Location','northeastoutside');
 
-%% CCA WITHIN (upper bound) sulla condizione 1
-Xz_cond1_A = (condition_sep_A{1} - muZ) ./ sigmaZ;
-Xz_cond1_B = (condition_sep_B{1} - muZ) ./ sigmaZ;
+%% CCA WITHIN (upper bound) su tutte le condizioni
+nCond = 2;   % oppure: nCond = numel(condition_sep_A);
 
-scores1_A = Xz_cond1_A * coeff;
-scores1_B = Xz_cond1_B * coeff;
+A_w_within   = cell(nCond, 1);
+B_w_within   = cell(nCond, 1);
+r_within     = cell(nCond, 1);
+U_within     = cell(nCond, 1);
+V_within     = cell(nCond, 1);
 
-X1 = zscore(scores1_A(:, pc_idx_cca));
-X2 = zscore(scores1_B(:, pc_idx_cca));
-
-[A_w, B_w, r_within, U_within, V_within] = canoncorr(X1, X2); 
-disp('CCA within condition:');
-disp(r_within);
+for c = 1:nCond
+    
+    % Z-score negli spazi originali
+    Xz_A = (condition_sep_A{c} - muZ) ./ sigmaZ;
+    Xz_B = (condition_sep_B{c} - muZ) ./ sigmaZ;
+    
+    % Proiezione sulle componenti principali
+    scores_A = Xz_A * coeff;
+    scores_B = Xz_B * coeff;
+    
+    % Selezione PC per CCA e ulteriore z-score
+    X1 = zscore(scores_A(:, pc_idx_cca));
+    X2 = zscore(scores_B(:, pc_idx_cca));
+    
+    % CCA
+    [A_w_within{c}, B_w_within{c}, r_within{c}, U_within{c}, V_within{c}] = canoncorr(X1, X2);
+    
+    % Output
+    fprintf('CCA within condition %d:\n', c);
+    disp(r_within{c});
+end
 
 
 %% CCA CONTROL (lower bound)
@@ -451,14 +468,16 @@ disp(r_control);
 
 
 %% Figure (3) - Across vs Within vs Control
+r_within_mean = mean( cell2mat(r_within), 1 );
+
 figure('Color','w'); 
 hold on;
 
 plot(r_across,  '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
     'Color', [0.2 0.6 0.2], 'DisplayName', 'Across conditions');
 
-plot(r_within,  '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
-    'Color', [0.2 0.2 0.8], 'DisplayName', 'Within');
+plot(r_within_mean, '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
+    'Color', [0.2 0.2 0.8], 'DisplayName', 'Within (mean)');
 
 plot(r_control, '-o', 'LineWidth', 2, 'MarkerSize', 6, ...
     'Color', [0.5 0.5 0.5], 'DisplayName', 'Control');
