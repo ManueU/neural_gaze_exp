@@ -40,7 +40,7 @@ end
 clearvars -except dataset baseline baseline_const
 
 %% Baseline as suggested by John
-filename = "../00_Data_extraction/free-gaze_BCI02.mat";
+filename = "../00_Data_extraction/controlled_BCI02.mat";
 load(filename);
 
 % Single channel
@@ -50,46 +50,22 @@ n_channels = 96;
 n_trials = 32;  
 bin_size = 0.02;
 
-events_time_tmp = []; 
-for i = 1:length(data(1).Data(2).Resampled(1).Task_states)
-    events_time = [events_time_tmp; size(data(1).Data(2).Resampled(1).Task_states{i,2},1)*bin_size];
-    events_time_tmp = events_time; 
-end 
-increment_times = cumsum(events_time); 
-
-labels = string(data(1).Data(2).Resampled(1).Task_states(:,1));
-
-array_names = ["medial", "lateral"]; 
-colors_target = [
-    0.839, 0.153, 0.157;  % rosso
-    0.122, 0.467, 0.706;  % blu
-    0.172, 0.627, 0.172;  % verde
-    0.580, 0.404, 0.741;  % viola
-    1.000, 0.498, 0.055;  % arancione
-    0.737, 0.741, 0.133;  % giallo oliva
-    0.549, 0.337, 0.294;  % marrone
-    0.890, 0.466, 0.760;  % rosa
-];
-
+mean_baseline = nan(n_channels, n_arrays);
+std_baseline  = nan(n_channels, n_arrays);
 for array = 1:n_arrays
     for channel = 1:n_channels
-        flag = 0; 
-        M_spikes = [];
+        trial_baselines = [];
         for set = 1:n_sets
             for trial = 1:n_trials
-                 M_spikes = [M_spikes; [data(set).Data(array).Resampled(trial).Trial(:,channel)]];   
+                 trial_spikes = data(set).Data(array).Resampled(trial).Trial(:,channel);  
+                 trial_baseline_counts = mean(trial_spikes); 
+                 trial_baselines(end+1) = trial_baseline_counts;            
             end
-         end 
-        M_spikes_mean = mean(M_spikes); 
-        M_spikes_std  = std(M_spikes);
-        M_spikes_sem  = std(M_spikes)/sqrt(length(M_spikes));
-        
-        firing_rate = M_spikes_mean ./ bin_size;
-        firing_std  = M_spikes_std  ./ bin_size;  
-        firing_sem  = M_spikes_sem  ./ bin_size;  
+        end 
+        baseline_mean_counts = mean(trial_baselines);
+        baseline_std_counts  = std(trial_baselines);
 
-        mean_baseline(channel, array) = firing_rate;
-        std_baseline(channel, array) = firing_std;
-    
+        mean_baseline(channel, array) = baseline_mean_counts / bin_size; 
+        std_baseline(channel, array)  = baseline_std_counts  / bin_size;
     end 
 end 
