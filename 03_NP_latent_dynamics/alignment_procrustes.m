@@ -43,11 +43,9 @@
 % che rende la traiettoria della condizione 2 il più simile possibile
 % a quella della condizione 1. Un valore d piccolo indica forme simili.
 
-% Z-score usando media e sigma globali (muZ, sigmaZ)
 Xz_cond1 = (condition_sep{1} - muZ) ./ sigmaZ;
 Xz_cond2 = (condition_sep{2} - muZ) ./ sigmaZ;
 
-% Proiezione sulle PC comuni
 scores1 = Xz_cond1 * coeff;   
 scores2 = Xz_cond2 * coeff;
 
