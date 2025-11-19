@@ -494,3 +494,33 @@ xlabel('Canonical dimension');
 ylabel('Canonical correlation');
 legend('Location', 'northeast');
 grid on; box off;
+
+%% Figure (4) - Similarity index
+sim = (r_across - r_control)./(r_within_mean - r_control); 
+
+figure('Color','w'); hold on;
+
+col_below  = [0.6 0.6 0.6];   % sim < 0
+col_between = [0.2 0.4 0.8];  % 0 <= sim <= 1
+col_above = [0.8 0.2 0.2];    % sim > 1
+bar_colors = zeros(length(sim), 3);
+for i = 1:length(sim)
+    if sim(i) < 0
+        bar_colors(i,:) = col_below;
+    elseif sim(i) > 1
+        bar_colors(i,:) = col_above;
+    else
+        bar_colors(i,:) = col_between;
+    end
+end
+
+b = bar(sim, 'FaceColor', 'flat', 'EdgeColor','none');
+b.CData = bar_colors;
+
+ylim([-0.2 1.2])
+xlabel('Canonical component');
+ylabel('Similarity index');
+grid on;
+box off;
+
+
