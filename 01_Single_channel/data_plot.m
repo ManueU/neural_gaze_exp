@@ -39,13 +39,13 @@ load(filename);
 
 %% Single channel
 events_time_tmp = []; 
-for i = 1:length(data(1).Data(2).Resampled(1).Task_states)
-    events_time = [events_time_tmp; size(data(1).Data(2).Resampled(1).Task_states{i,2},1)*bin_size];
+for i = 1:length(data(1).Data(2).Interp(1).Task_states)
+    events_time = [events_time_tmp; size(data(1).Data(2).Interp(1).Task_states{i,2},1)*bin_size];
     events_time_tmp = events_time; 
 end 
 increment_times = cumsum(events_time); 
 
-labels = string(data(1).Data(2).Resampled(1).Task_states(:,1));
+labels = string(data(1).Data(2).Interp(1).Task_states(:,1));
 
 array_names = ["medial", "lateral"]; 
 colors_target = [
@@ -70,9 +70,9 @@ for array = 1:n_arrays
             % associated to the specific target id. We consider all the
             % sets.
             for set = 1:n_sets
-                idx = find([data(set).Data(array).Resampled.Target_ID] == target_des(target));                      
+                idx = find([data(set).Data(array).Interp.Target_ID] == target_des(target));                      
                 for j = 1:length(idx)
-                    M_spikes = [M_spikes, [data(set).Data(array).Resampled(idx(j)).Trial(:,channel)]];   
+                    M_spikes = [M_spikes, [data(set).Data(array).Interp(idx(j)).Trial(:,channel)]];   
                 end
             end 
             M_spikes_mean = mean(M_spikes, 2); 
@@ -100,7 +100,7 @@ for array = 1:n_arrays
                     end
 
                     xlabel('Time (s)');
-                    ylabel('z-score');
+                    ylabel('z-scored firing rate');
                     ylim([-10 10])
                     title(sprintf('Array = %s; Channel = %d;', array_names(array), channel));
                     legend('Location','best');
@@ -110,8 +110,8 @@ for array = 1:n_arrays
                 t = (1:numel(firing_rate)) * bin_size;
                 plot(t, data_zscored_s, 'LineWidth', 1.5, 'Color', colors_target(target,:), 'DisplayName', sprintf('%d', target_des(target))), hold on
                 
-                yline(2, '--k', '2 std', 'LineWidth', 1, 'DisplayName', '2 std', 'HandleVisibility','off');
-                yline(-2, '--k', '-2 std', 'LineWidth', 1, 'DisplayName', '-2 std', 'HandleVisibility','off');
+                % yline(2, '--k', '2 std', 'LineWidth', 1, 'DisplayName', '2 std', 'HandleVisibility','off');
+                % yline(-2, '--k', '-2 std', 'LineWidth', 1, 'DisplayName', '-2 std', 'HandleVisibility','off');
 
             end 
         end 

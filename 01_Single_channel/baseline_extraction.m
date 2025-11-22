@@ -40,7 +40,7 @@ end
 clearvars -except dataset baseline baseline_const
 
 %% Baseline as suggested by John
-filename = "../00_Data_extraction/controlled_BCI02.mat";
+filename = "../00_Data_extraction/free-gaze_BCI02.mat";
 load(filename);
 
 % Single channel
@@ -57,7 +57,7 @@ for array = 1:n_arrays
         trial_baselines = [];
         for set = 1:n_sets
             for trial = 1:n_trials
-                 trial_spikes = data(set).Data(array).Resampled(trial).Trial(:,channel);  
+                 trial_spikes = data(set).Data(array).Interp(trial).Trial(:,channel);  
                  trial_baseline_counts = mean(trial_spikes); 
                  trial_baselines(end+1) = trial_baseline_counts;            
             end
