@@ -49,7 +49,7 @@ n_arrays = 2;
 n_trials = 32;
 bin_size = 0.02;
 
-filename = '../00_Data_extraction/free-gaze_BCI02.mat';
+filename = '../00_Data_extraction/gaze_BCI02.mat';
 load(filename)
 
 %% Decoding over time with SVM
