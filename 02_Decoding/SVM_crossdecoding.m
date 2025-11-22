@@ -48,7 +48,7 @@
 % =========================================================
 
 clearvars
-close all
+% close all
 clc
 
 n_sets = 6;
@@ -91,17 +91,17 @@ for d = 1:nCond
 
     Y = [];
     for set = 1:n_sets
-        Y = [Y; [data(set).Data(1).Resampled.Target_ID]'];
+        Y = [Y; [data(set).Data(1).Interp.Target_ID]'];
     end
     classes = unique(Y);
 
-    idx_pres  = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == PRE);
-    idx_reach = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == POST);
+    idx_pres  = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == PRE);
+    idx_reach = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == POST);
 
     n_bins_pre  = round(period_pre/bin_size);
     n_bins_post = round(period_post/bin_size);
 
-    start_pre = size(data(1).Data(1).Resampled(1).Task_states{idx_pres,2}, 1) - n_bins_pre + 1;
+    start_pre = size(data(1).Data(1).Interp(1).Task_states{idx_pres,2}, 1) - n_bins_pre + 1;
     end_post  = n_bins_post;
 
     j = 1;
@@ -113,8 +113,8 @@ for d = 1:nCond
             tmp_post = [];
 
             for array = 1:n_arrays
-                tmp_pre  = [tmp_pre,  data(set).Data(array).Resampled(trial).Task_states{idx_pres,2}(start_pre:end, :)];
-                tmp_post = [tmp_post, data(set).Data(array).Resampled(trial).Task_states{idx_reach,2}(1:end_post, :)];
+                tmp_pre  = [tmp_pre,  data(set).Data(array).Interp(trial).Task_states{idx_pres,2}(start_pre:end, :)];
+                tmp_post = [tmp_post, data(set).Data(array).Interp(trial).Task_states{idx_reach,2}(1:end_post, :)];
             end
 
             matrix = [tmp_pre; tmp_post];
