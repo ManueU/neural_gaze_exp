@@ -12,7 +12,8 @@ end
 
 
 %% Reading data from the dataset
-paradigm = input("Please enter the condition you want to analyse (i.e., 'Free-gaze', 'Gaze', 'Motor', 'Gaze + Motor', 'New dataset'): ");
+paradigm = input('Please enter the condition you want to analyse (i.e., ''Free-gaze'', ''Gaze'', ''Motor'', ''Gaze + Motor'', ''New dataset''): ', 's');
+paradigm = string(paradigm);
 switch (paradigm) 
     case "Free-gaze"
         % BCI03 1 dataset
@@ -29,31 +30,31 @@ switch (paradigm)
         % set_numbers = [3,8,14,18]; 
         % sets = {set003, set008, set014, set018};
         % BCI03 2 dataset
-        set_numbers = [2, 8, 12, 13, 18, 23]; 
-        sets = {set02, set08, set12, set13, set18, set23};
+        % set_numbers = [2, 8, 12, 13, 18, 23]; 
+        % sets = {set02, set08, set12, set13, set18, set23};
         % BCI02
-        % set_numbers = [1, 6, 13, 17, 18, 23]; 
-        % sets = {set01, set06, set13, set17, set18, set23};
+        set_numbers = [1, 6, 13, 17, 18, 23]; 
+        sets = {set01, set06, set13, set17, set18, set23};
     case "Motor"
         % BCI03 1 dataset        
         % set_numbers = [4,9,11,16];
         % sets = {set004, set009, set011, set016};
         % BCI03 2 dataset        
-        set_numbers = [3, 5, 10, 15, 17, 24];
-        sets = {set03, set05, set10, set15, set17, set24};       
+        % set_numbers = [3, 5, 10, 15, 17, 24];
+        % sets = {set03, set05, set10, set15, set17, set24};       
         % BCI02
-        % set_numbers = [2, 7, 10, 15, 20, 22]; 
-        % sets = {set02, set07, set10, set15, set20, set22};
+        set_numbers = [2, 7, 10, 15, 20, 22]; 
+        sets = {set02, set07, set10, set15, set20, set22};
     case "Gaze + Motor"
         % BCI03 1 dataset                
         % set_numbers = [5,7,12,17]; 
         % sets = {set005, set007, set012, set017}; 
         % BCI03 2 dataset                
-        set_numbers = [1, 6, 11, 14, 19, 21];
-        sets = {set01, set06, set11, set14, set19, set21};    
+        % set_numbers = [1, 6, 11, 14, 19, 21];
+        % sets = {set01, set06, set11, set14, set19, set21};    
         % BCI02
-        % set_numbers = [3, 5, 11, 16, 19, 24]; 
-        % sets = {set03, set05, set11, set16, set19, set24};
+        set_numbers = [3, 5, 11, 16, 19, 24]; 
+        sets = {set03, set05, set11, set16, set19, set24};
     case "New dataset"
         set_numbers = [1, 2, 3, 4];
         sets = {set01, set02, set03, set04}; 
@@ -66,10 +67,9 @@ ends    = cellfun(@(S) S.trial_num(end), sets);
 offsets = [0, cumsum(ends(1:end-1))];
 
 MaskedSpikeCounts_tmp = []; 
-task_state_labels_tmp = []; 
+task_state_labels_tmp = {}; 
 target_coordinates_tmp = []; 
 trial_labels_tmp = []; 
-state_names_tmp = []; 
 for i = 1:length(set_numbers)
     MaskedSpikeCounts = [MaskedSpikeCounts_tmp; sets{i}.SpikeCount(idx_start(i):end, 1:5:end)];
     MaskedSpikeCounts_tmp = MaskedSpikeCounts; 
@@ -104,7 +104,7 @@ target_coordinates(empty_idx,2) = 0;
 % Transform the "Remove" task state into "Reach" task state
 for i = 1:numel(task_state_labels)   
     if strcmp(task_state_labels{i}, 'Remove') | strcmp(task_state_labels{i}, 'Remove1') | strcmp(task_state_labels{i}, 'Remove2')
-       task_state_labels{i} = 'Reach';
+       task_state_labels{i} = 'Center';
     end
 end
 
@@ -135,7 +135,7 @@ rowsWithNaN = any(isnan(MaskedSpikeCounts), 2);
 rowsToRemove = find(rowsWithNaN);
 MaskedSpikeCounts(rowsToRemove, :) = [];
 task_state_labels(rowsToRemove) = [];
-target_coordinates(rowsToRemove,:) = [];
+target_info(rowsToRemove,:) = [];
 trial_labels(rowsToRemove) = []; 
 
 idx.medial_sens   = 65:96;                   % Sensory medial (32ch)
@@ -204,7 +204,7 @@ for array = 1:numel(array_names)
                 for k = 1:length(breaks)-1
                     blocks{k} = idx_tmp(breaks(k)+1 : breaks(k+1));
                 end
-                if i == 1 
+                if phase == 1 
                     idx_tmp = blocks{1,1};
                 else
                     idx_tmp = blocks{2,1};
@@ -239,26 +239,37 @@ for array = 1:numel(array_names)
     % output vectors: 
     % data_by_trial_int
     % data_by_task_state_int
-    data_by_task_state_int = data_by_task_state;
+    data_by_task_state_int = cell(size(data_by_task_state));
+    
+    for t = 1:numel(data_by_task_state)
+        n_rows = size(data_by_task_state{t},1);
+        data_by_task_state_int{t} = cell(n_rows,2);
+        data_by_task_state_int{t}(:,1) = data_by_task_state{t}(:,1);  % riporto i nomi delle fasi
+    end
+
     for phase = 1:n_phases
         len = [];        
         for trial = 1:n_trials
             len = [len; size(cell2mat(data_by_task_state{trial,1}(phase,2)),1)];
         end
         [maxLen, idx] = max(len); 
+        fprintf("Phase %s. Max length: %d. Average length: %d.\n", state_names(phase), maxLen, round(mean(len)))
+        if maxLen > round(mean(len)) + 5
+            fprintf("Phase %s. Outlier: %d, with an average length of %d. Trial %d, Set %d\n", state_names(phase), maxLen, round(mean(len)), mod(idx-1, 32) + 1, ceil(idx / 32));
+        end
 
         for trial = 1:n_trials
             data_by_task_state_int{trial,1}(phase,2) = {interp_data(cell2mat(data_by_task_state{trial,1}(phase,2)), maxLen)};
         end
     end
 
-    data_by_trial_int = data_by_trial; 
+    data_by_trial_int = cell(size(data_by_trial));
     for trial = 1:n_trials
         data_by_trial_int_tmp = []; 
         for phase = 1:n_phases
             data_by_trial_int_tmp = [data_by_trial_int_tmp; cell2mat(data_by_task_state_int{trial,1}(phase,2))];
         end 
-        data_by_trial_int{trial, 1} = data_by_trial_int_tmp; 
+        data_by_trial_int{trial} = data_by_trial_int_tmp; 
     end 
     
     % Filling data structure 
@@ -296,17 +307,17 @@ for array = 1:numel(array_names)
 
         per_set_data{set}(array).Array      = array_names{array};
         per_set_data{set}(array).Original   = original_l2;
-        per_set_data{set}(array).Resampled  = dataset_l2;
+        per_set_data{set}(array).Interp  = dataset_l2;
     end 
 end
 
 for set = 1:n_sets
     dataset_l1(set).Set      = string(set_numbers(set));
-    dataset_l1(set).Paradigm = paradigm{set};
+    dataset_l1(set).Paradigm = paradigm(set);
     dataset_l1(set).Data     = per_set_data{set};  
 end
 
 data = dataset_l1;
 clearvars -except data
 
-save("controlled_BCI03.mat", "data"); 
+save("free-gaze_BCI02.mat", "data"); 
