@@ -41,7 +41,7 @@
 
 
 clearvars
-close all
+% close all
 clc 
 
 n_sets = 6;
@@ -54,7 +54,7 @@ load(filename)
 
 %% Decoding over time with SVM
 % bins per trial
-N = size(data(1).Data(1).Resampled(1).Trial, 1); 
+N = size(data(1).Data(1).Interp(1).Trial, 1); 
 rec_duration = N*bin_size; 
 
 % finestra scorrevole
@@ -66,7 +66,7 @@ N_o = round(overlap/bin_size);
 % etichette Y
 Y = []; 
 for set = 1:n_sets
-    Y = [Y; [data(set).Data(1).Resampled.Target_ID]']; 
+    Y = [Y; [data(set).Data(1).Interp.Target_ID]']; 
 end  
 classes = unique(Y,'stable');
 n_classes = numel(classes);
@@ -87,7 +87,7 @@ for w = 1:n_acc
         for trial = 1:n_trials
             SVM_matrix = []; 
             for array = 1:n_arrays
-                SVM_matrix = [SVM_matrix, data(set).Data(array).Resampled(trial).Trial(start_w:end_w, :)]; 
+                SVM_matrix = [SVM_matrix, data(set).Data(array).Interp(trial).Trial(start_w:end_w, :)]; 
             end 
             X{j} = mean(SVM_matrix./bin_size,1);
             j = j + 1; 
@@ -111,12 +111,13 @@ end
 %% Figure
 figure('Color', 'White')
 events_time_tmp = []; 
-for i = 1:length(data(1).Data(2).Resampled(1).Task_states)
-    events_time = [events_time_tmp; size(data(1).Data(2).Resampled(1).Task_states{i,2},1)*bin_size];
+for i = 1:length(data(1).Data(2).Interp(1).Task_states)
+    events_time = [events_time_tmp; size(data(1).Data(2).Interp(1).Task_states{i,2},1)*bin_size];
     events_time_tmp = events_time; 
 end 
 increment_times = cumsum(events_time); 
-labels = string(data(1).Data(2).Resampled(1).Task_states(:,1));
+labels = string(data(1).Data(2).Interp(1).Task_states(:,1));
+labels = ["", "Target cue", "Go cue", ""];
 
 colors = [
     0.839, 0.153, 0.157;  % rosso
@@ -140,19 +141,29 @@ acc_smooth_overall = smoothdata(acc_overall, 'gaussian', w_smooth);
 plot(t, acc_smooth_overall*100, 'LineWidth', 1.5, 'Color', 'k', 'DisplayName','Overall'), hold on
 
 if exist('increment_times','var') && ~isempty(increment_times)
-   xline(increment_times, '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
-   k = min(numel(labels), numel(increment_times));
-   x_times = [0; increment_times(:)];
-   x_text  = x_times(1:k) + diff(x_times(1:k+1))/2;
-   ylim([0 100]);
-   ax = gca; 
-   y_text = (ax.YLim(2) - 10)*ones(1,length(x_text)); 
-   text(x_text, y_text, labels(1:k), 'HorizontalAlignment','center');
+    xline(increment_times, '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
+    labels = {"Target cue", "Go cue"};
+
+    ylim([0 100]);
+    ax = gca;
+
+    y_pos = ax.YLim(2) - 5;
+    for i = 1:2
+        x_pos = increment_times(i) - 0.3;
+        text(x_pos - 0.05, y_pos, labels{i}, ...
+            'HorizontalAlignment', 'right', ...
+            'VerticalAlignment', 'top', ...
+            'Rotation', 90, ...
+            'FontSize', 11);
+    end
 end
 
+
+
 yline((1/n_classes)*100,'-', 'Chance', 'HandleVisibility','off'); 
-legend show; 
+% legend show; 
 xlabel('Time (s)');
 ylabel('Accuracy (%)');
 xlim([0 rec_duration]);
+box off; 
 
