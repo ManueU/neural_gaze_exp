@@ -24,10 +24,10 @@ bin_size = 0.02;
 period_pre = 0.1; 
 period_post = 0.5; 
 PRE = "Pres12";
-POST = "Reach";
+POST = "Gaze";
 
 %% Load 
-filename = '../00_Data_extraction/free-gaze_BCI02.mat';
+filename = '../00_Data_extraction/gaze_BCI02.mat';
 load(filename)
 
 %% Costruzione matrice PCA 
