@@ -96,7 +96,7 @@ for w = 1:n_acc
     X = cell2mat(X); 
     
     % k-fold SVM
-    k_fold = 5; 
+    k_fold = 10; 
     [acc_overall(w), cm{w}] = svm_cv(X, Y, k_fold);
     
     % accuracy per classe (diag della cm normalizzata per riga) 
@@ -116,8 +116,6 @@ for i = 1:length(data(1).Data(2).Interp(1).Task_states)
     events_time_tmp = events_time; 
 end 
 increment_times = cumsum(events_time); 
-labels = string(data(1).Data(2).Interp(1).Task_states(:,1));
-labels = ["", "Target cue", "Go cue", ""];
 
 colors = [
     0.839, 0.153, 0.157;  % rosso
@@ -142,13 +140,13 @@ plot(t, acc_smooth_overall*100, 'LineWidth', 1.5, 'Color', 'k', 'DisplayName','O
 
 if exist('increment_times','var') && ~isempty(increment_times)
     xline(increment_times, '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
-    labels = {"Target cue", "Go cue"};
+    labels = {"Central cue", "Target cue", "Go cue - gaze"};
 
     ylim([0 100]);
     ax = gca;
 
     y_pos = ax.YLim(2) - 5;
-    for i = 1:2
+    for i = 1:3
         x_pos = increment_times(i) - 0.3;
         text(x_pos - 0.05, y_pos, labels{i}, ...
             'HorizontalAlignment', 'right', ...
@@ -162,6 +160,7 @@ end
 
 yline((1/n_classes)*100,'-', 'Chance', 'HandleVisibility','off'); 
 % legend show; 
+yticks(0:20:100);
 xlabel('Time (s)');
 ylabel('Accuracy (%)');
 xlim([0 rec_duration]);

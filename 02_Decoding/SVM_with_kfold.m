@@ -122,9 +122,12 @@ for d = 1:numel(filename)
 
     cc = confusionchart(cm, classnames, 'Normalization','row-normalized', ...
         'RowSummary','off', 'ColumnSummary','off');
-    cc.Title = sprintf('Confusion Matrix - Location Decoder (Accuracy: %.2f%%)', acc*100);
-    cc.XLabel = 'Predicted Target';
-    cc.YLabel = 'True Target';
+    cc.GridVisible = 'off';
+    cc.DiagonalColor    = [0 0.35 0.7];
+    cc.OffDiagonalColor = [0.8 0.8 0.8];    % grigio chiaro
+    cc.Title = sprintf('Overall accuracy: %.2f%%%', acc*100);
+    cc.XLabel = '\bf Predicted Target';
+    cc.YLabel = '\bf True Target';
 
     cm_all{d,1} = cm;
     acc_all{d,1} = acc;
