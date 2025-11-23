@@ -51,8 +51,8 @@ for d = 1:numel(filename)
         POST = "Reach";
     end
         
-    idx_pres = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == PRE); 
-    idx_reach = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == POST); 
+    idx_pres = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == PRE); 
+    idx_reach = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == POST); 
     if isempty(idx_pres) || isempty(idx_reach)
         error('Stati PRE/POST non trovati: controlla PRE/POST');
     end
@@ -72,11 +72,11 @@ for d = 1:numel(filename)
     
                 for set_ = 1:n_sets
                     set = sets(set_);
-                    idx = find([data(set).Data(array).Resampled.Target_ID] == target); 
+                    idx = find([data(set).Data(array).Interp.Target_ID] == target); 
     
                     for j = 1:length(idx)
-                        tmp_pre = data(set).Data(array).Resampled(idx(j)).Task_states{idx_pres, 2}(end-pre_bins+1:end, channel); 
-                        tmp_post = data(set).Data(array).Resampled(idx(j)).Task_states{idx_reach,2}(1:post_bins, channel); 
+                        tmp_pre = data(set).Data(array).Interp(idx(j)).Task_states{idx_pres, 2}(end-pre_bins+1:end, channel); 
+                        tmp_post = data(set).Data(array).Interp(idx(j)).Task_states{idx_reach,2}(1:post_bins, channel); 
                         matrix = [tmp_pre; tmp_post];  
                         
                         M_spikes = [M_spikes, matrix];
