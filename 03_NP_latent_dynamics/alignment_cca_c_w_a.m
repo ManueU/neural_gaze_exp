@@ -56,7 +56,7 @@
 
 %% CCA across / within / control
 clearvars
-% close all
+close all
 clc
 
 sets = [1,2,4,5,6]; 
@@ -75,7 +75,7 @@ nbin = pre_bins + post_bins;
 
 filename = { ...
     '../00_Data_extraction/free-gaze_BCI02.mat', ...
-    '../00_Data_extraction/controlled_BCI02.mat'};
+    '../00_Data_extraction/motor_BCI02.mat'};
 
 nCond = numel(filename);
 
@@ -109,8 +109,8 @@ for d = 1:nCond
         POST = "Reach";
     end
         
-    idx_pres  = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == PRE); 
-    idx_reach = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == POST); 
+    idx_pres  = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == PRE); 
+    idx_reach = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == POST); 
     if isempty(idx_pres) || isempty(idx_reach)
         error('Stati PRE/POST non trovati: controlla PRE/POST per il dataset %s', ds_name);
     end
@@ -145,15 +145,15 @@ for d = 1:nCond
     
                 for set_ = 1:n_sets
                     set = sets(set_);
-                    idx_trials = find([data(set).Data(array).Resampled.Target_ID] == target); 
+                    idx_trials = find([data(set).Data(array).Interp.Target_ID] == target); 
                     
                     for j = 1:length(idx_trials)
                         trial_counter = trial_counter + 1;
                         tr = idx_trials(j);
 
                         % ---------- finestra onset reach ----------
-                        tmp_pre = data(set).Data(array).Resampled(tr).Task_states{idx_pres,  2}(end-pre_bins+1:end, channel); 
-                        tmp_post = data(set).Data(array).Resampled(tr).Task_states{idx_reach, 2}(1:post_bins, channel); 
+                        tmp_pre = data(set).Data(array).Interp(tr).Task_states{idx_pres,  2}(end-pre_bins+1:end, channel); 
+                        tmp_post = data(set).Data(array).Interp(tr).Task_states{idx_reach, 2}(1:post_bins, channel); 
                         matrix = [tmp_pre; tmp_post];      
                         
                         M_spikes_all = [M_spikes_all, matrix];
@@ -167,7 +167,7 @@ for d = 1:nCond
 
                         % ---------- finestra di CONTROLLO  ----------
                         % concateno tutti gli stati del trial (trial+intertrial)
-                        trial_full = data(set).Data(array).Resampled(tr).Trial(:, channel);                        
+                        trial_full = data(set).Data(array).Interp(tr).Trial(:, channel);                        
 
                         L = size(trial_full,1);
                         if L >= nbin
