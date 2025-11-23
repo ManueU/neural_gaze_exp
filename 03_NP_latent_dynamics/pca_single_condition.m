@@ -12,7 +12,7 @@
 % =========================================================
 
 clearvars 
-% close all
+close all
 clc
 
 sets_pca = [1,2,4,5,6];
@@ -27,12 +27,12 @@ PRE = "Pres12";
 POST = "Reach";
 
 %% Load 
-filename = '../00_Data_extraction/motor_BCI02.mat';
+filename = '../00_Data_extraction/free-gaze_BCI02.mat';
 load(filename)
 
 %% Costruzione matrice PCA 
-idx_pres = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == PRE); 
-idx_reach = find(string(data(1).Data(1).Resampled(1).Task_states(:,1)) == POST); 
+idx_pres = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == PRE); 
+idx_reach = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == POST); 
 if isempty(idx_pres) || isempty(idx_reach)
     error('Stati PRE/POST non trovati: controlla PRE/POST');
 end
@@ -52,11 +52,11 @@ for array = 1:n_arrays
 
             for set_all = 1:n_sets
                 set = sets_pca(set_all);
-                idx = find([data(set).Data(array).Resampled.Target_ID] == target); 
+                idx = find([data(set).Data(array).Interp.Target_ID] == target); 
 
                 for j = 1:length(idx)
-                    tmp_pre = data(set).Data(array).Resampled(idx(j)).Task_states{idx_pres, 2}(end-pre_bins+1:end, channel); 
-                    tmp_post = data(set).Data(array).Resampled(idx(j)).Task_states{idx_reach,2}(1:post_bins, channel); 
+                    tmp_pre = data(set).Data(array).Interp(idx(j)).Task_states{idx_pres, 2}(end-pre_bins+1:end, channel); 
+                    tmp_post = data(set).Data(array).Interp(idx(j)).Task_states{idx_reach,2}(1:post_bins, channel); 
                     matrix = [tmp_pre; tmp_post];  
                     
                     M_spikes = [M_spikes, matrix];
