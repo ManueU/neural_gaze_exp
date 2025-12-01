@@ -46,7 +46,7 @@ n_arrays = 2;
 n_trials = 32;
 bin_size = 0.02;
 period_pre = 0.1;
-period_post = 0.5;
+period_post = 0.1;
 
 filename = { ...
     '../00_Data_extraction/free-gaze_BCI02.mat' ...

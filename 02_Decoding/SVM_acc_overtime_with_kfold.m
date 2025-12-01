@@ -41,7 +41,7 @@
 
 
 clearvars
-% close all
+close all
 clc 
 
 n_sets = 6;
@@ -49,7 +49,7 @@ n_arrays = 2;
 n_trials = 32;
 bin_size = 0.02;
 
-filename = '../00_Data_extraction/gaze_BCI02.mat';
+filename = '../00_Data_extraction/free-gaze_BCI03.mat';
 load(filename)
 
 %% Decoding over time with SVM
@@ -140,13 +140,13 @@ plot(t, acc_smooth_overall*100, 'LineWidth', 1.5, 'Color', 'k', 'DisplayName','O
 
 if exist('increment_times','var') && ~isempty(increment_times)
     xline(increment_times, '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
-    labels = {"Central cue", "Target cue", "Go cue - gaze"};
+    labels = {"Target cue", "Go cue"};
 
     ylim([0 100]);
     ax = gca;
 
     y_pos = ax.YLim(2) - 5;
-    for i = 1:3
+    for i = 1:2
         x_pos = increment_times(i) - 0.3;
         text(x_pos - 0.05, y_pos, labels{i}, ...
             'HorizontalAlignment', 'right', ...
