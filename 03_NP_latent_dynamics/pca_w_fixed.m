@@ -19,17 +19,19 @@ clearvars
 close all
 clc
 
-sets = [1,2,4,5,6]; 
-n_sets = 5; 
+sets = [2,4,5,6]; 
+n_sets = numel(sets); 
 n_arrays = 2;      
 n_channels = 96;    
 n_targets = 8; 
 bin_size = 0.02; 
-period_pre = 0.1; 
-period_post = 0.5; 
+period_pre = 1.0; 
+period_post = 0.2; 
 
 filename = {'../00_Data_extraction/free-gaze_BCI02.mat', ...
-            '../00_Data_extraction/motor_BCI02.mat'};
+            '../00_Data_extraction/motor_BCI02.mat',...
+            '../00_Data_extraction/controlled_BCI02.mat'};
+
 
 %% Costruzione matrice PCA 
 condition = []; 
@@ -156,17 +158,16 @@ for c = 1:nCond
         t2 = smoothdata(traj(:,2), 'gaussian', w);
         t3 = smoothdata(traj(:,3), 'gaussian', w);
 
-        plot3(t1, t2, t3, 'Color', colors(t,:), 'LineWidth', 2, ...
-              'LineStyle', styles{mod(c-1,numel(styles))+1});
+        plot3(t1, t2, t3, 'Color', colors(nCond,:), 'LineWidth', 2);
     
         % marker inizio (cerchio)
         plot3(t1(1), t2(1), t3(1), 'o', ...
-              'MarkerSize', 8, 'MarkerFaceColor', colors(t,:), ...
+              'MarkerSize', 8, 'MarkerFaceColor', colors(nCond,:), ...
               'MarkerEdgeColor', colors(t,:), 'HandleVisibility','off');
     
         % marker fine (triangolo)
         plot3(t1(end), t2(end), t3(end), '^', ...
-              'MarkerSize', 8, 'MarkerFaceColor', colors(t,:), ...
+              'MarkerSize', 8, 'MarkerFaceColor', colors(nCond,:), ...
               'MarkerEdgeColor', colors(t,:), 'HandleVisibility','off');
     end
 end 
@@ -177,25 +178,25 @@ hEnd   = plot3(nan,nan,nan, '^', 'Color','k', 'MarkerFaceColor','k');
 if nCond == 1
     % Solo Start/End
     legend([hStart hEnd], {'Start','End'}, 'Location','northeastoutside');
-else
-    % Crea etichette leggibili dai filename
-    legEntries = cell(1, nCond + 2);  % condizioni + Start/End
-    styles = {'-','--',':','-.'};
-    hStyles = gobjects(1, nCond);
-
-    for c = 1:nCond
-        % Estrai solo la parte prima del primo "_"
-        [~, baseName, ~] = fileparts(filename{c});
-        [namePart, ~] = strtok(baseName, '_');
-        legEntries{c} = namePart;
-        % Dummy per linea condizione
-        ls = styles{mod(c-1, numel(styles))+1};
-        hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
-    end
-
-    legEntries{nCond+1} = 'Start';
-    legEntries{nCond+2} = 'End';
-    legend([hStyles hStart hEnd], legEntries, 'Location','northeastoutside');
+% else
+%     % Crea etichette leggibili dai filename
+%     legEntries = cell(1, nCond + 2);  % condizioni + Start/End
+%     styles = {'-','--',':','-.'};
+%     hStyles = gobjects(1, nCond);
+% 
+%     for c = 1:nCond
+%         % Estrai solo la parte prima del primo "_"
+%         [~, baseName, ~] = fileparts(filename{c});
+%         [namePart, ~] = strtok(baseName, '_');
+%         legEntries{c} = namePart;
+%         % Dummy per linea condizione
+%         ls = styles{mod(c-1, numel(styles))+1};
+%         hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
+%     end
+% 
+%     legEntries{nCond+1} = 'Start';
+%     legEntries{nCond+2} = 'End';
+%     legend([hStyles hStart hEnd], legEntries, 'Location','northeastoutside');
 end
 
 xlabel(sprintf('PC1 (%.1f%%)', explained(1)));
