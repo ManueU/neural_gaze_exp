@@ -166,8 +166,8 @@ for c = 1:2
     hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
 end
 
-legend([hStyles hStart hEnd], {condNames{:}, 'Start', 'End'}, ...
-       'Location','northeastoutside');
+% legend([hStyles hStart hEnd], {condNames{:}, 'Start', 'End'}, ...
+%        'Location','northeastoutside');
 
 %% Figure (4) - Residuals per ciascun target (quanto differiscono nel tempo)
 % Per ogni target si calcola la distanza punto-per-punto tra le due

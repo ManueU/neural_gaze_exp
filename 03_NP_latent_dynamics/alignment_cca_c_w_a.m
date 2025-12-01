@@ -74,8 +74,8 @@ post_bins = max(1, round(period_post/bin_size));
 nbin = pre_bins + post_bins;
 
 filename = { ...
-    '../00_Data_extraction/free-gaze_BCI02.mat', ...
-    '../00_Data_extraction/motor_BCI02.mat'};
+    '../00_Data_extraction/motor_BCI02.mat', ...
+    '../00_Data_extraction/controlled_BCI02.mat'};
 
 nCond = numel(filename);
 

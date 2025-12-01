@@ -120,6 +120,13 @@ Ycca = zscore(Ycca);
 disp('Canonical correlations (CCA):');
 disp(r);
 
+% --------- CCA-distance per la CCA finale (m = 10) ----------------------
+% Usiamo le prime k_F CC (qui k_F = min(nCC, length(r)))
+k_F = min(nCC, numel(r));
+d_CCA_final = 1 - mean(r(1:k_F));
+
+fprintf('\nCCA-distance (prime %d CC, m = 10): %.4f\n', k_F, d_CCA_final);
+% ------------------------------------------------------------------------
 
 %% Figure (2) - trajectories in canonical space
 figure('Color','w'); 
@@ -183,9 +190,9 @@ for c = 1:2
     ls = styles{c};
     hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
 end
-
-legend([hStyles hStart hEnd], {condNames{:}, 'Start', 'End'}, ...
-       'Location','northeastoutside');
+% 
+% legend([hStyles hStart hEnd], {condNames{:}, 'Start', 'End'}, ...
+%        'Location','northeastoutside');
 
 
 %% Figure (3)
@@ -208,3 +215,5 @@ xlabel('Canonical dimension');
 ylabel('Correlation');
 title('Canonical correlations between conditions');
 box("off")
+
+
