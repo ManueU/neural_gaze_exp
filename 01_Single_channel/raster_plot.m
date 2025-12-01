@@ -7,9 +7,9 @@ load(filename);
 %% Parametri
 bin_size = 0.02;
 n_sets = 6;
-channel = 64;
+channel = 72;
 array = 2;      
-targets = [2 3 4];
+targets = [2 3 6 7];
 
 array_names = ["medial", "lateral"]; 
 
@@ -190,10 +190,6 @@ for tIdx = 1:numel(targets)
             end
         end
     end
-
-    % linea di separazione tra target diversi (opzionale)
-    yline(trial_counter + 0.5, ':', 'Color', [0.5 0.5 0.5], ...
-          'HandleVisibility','off');
 end
 
 xlabel('Time (s)');
