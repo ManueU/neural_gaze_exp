@@ -4,7 +4,7 @@ clc
 
 %% Modulation maps
 
-filename = '../00_Data_extraction/free-gaze_BCI02.mat'; 
+filename = '../00_Data_extraction/gaze_BCI02.mat'; 
 load(filename);
 
 n_sets = 6;
@@ -16,9 +16,9 @@ bin_size = 0.02;
 period_pre = 0.1;
 period_post = 0.5;
 PRE = "Pres12";
-POST = "Reach";
+POST = "Gaze";
 
-%% Capire se l'elettrodo è modulante 
+%% Modulation matrix
 idx_pres = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == PRE); 
 idx_reach = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == POST); 
 if isempty(idx_pres) || isempty(idx_reach)
@@ -30,49 +30,35 @@ post_bins = max(1, round(period_post/bin_size));
 for array = 1:n_arrays
     for channel = 1:n_channels
         matrix_ch_all = []; 
-        mean_ch_tgt_mask = [];  
-        trial_count = 0; 
         for target = 1:n_targets
             matrix_ch_tgt = [];
             for set = 1:n_sets
                 idx = find([data(set).Data(array).Interp.Target_ID] == target); 
                 for j = 1:length(idx)
-                    trial_count = trial_count + 1; 
                     tmp_pre = data(set).Data(array).Interp(idx(j)).Task_states{idx_pres, 2}(end-pre_bins+1:end, channel); 
                     tmp_post = data(set).Data(array).Interp(idx(j)).Task_states{idx_reach,2}(1:post_bins, channel); 
                     trial = [tmp_pre; tmp_post];  
 
                     firing_rate = trial ./ bin_size;
-                    
-                    % firing_rate = trial ./ bin_size;
-                    % trial_zscored = (firing_rate-mean_baseline(channel, array))./std_baseline(channel, array); 
-                    % [~,id] = max(abs(trial_zscored));
-                    % trial_max(trial_count, 1) = trial_zscored(id); 
-                    % trial_label(trial_count, 1) = target;  
 
                     matrix_ch_tgt = [matrix_ch_tgt, firing_rate]; 
                     matrix_ch_all = [matrix_ch_all, firing_rate]; 
                 end
             end
-            mean_ch_tgt_mask(:,target, channel) = mean(matrix_ch_tgt, 2); 
             mean_ch_tgt(target, (array-1)*n_channels + channel) = mean(mean(matrix_ch_tgt));
 
         end 
         mean_all((array-1)*n_channels + channel) = mean(mean(matrix_ch_all, 2));
-        % p_value((array-1)*n_channels + channel, 1) = anova1(mean_ch_tgt_mask_bs, label_mask_bs, 'off'); 
     end 
 end 
 
-
-
-%% Creazione di modulation matrix e modulation mask
+%% Creazione di modulation matrix
 load('ChannelMap_BCI02.mat'); 
 motor_medial = ChannelMap.ChannelNumbers{1,1}; 
 motor_lateral = ChannelMap.ChannelNumbers{1,3};
 motor_electrodes = {motor_medial, motor_lateral};  
 
 modulation_matrix = {nan(10,10), nan(10,10)}; 
-modulation_mask = {nan(10,10), nan(10,10)}; 
 
 for array = 1:n_arrays
     for i = 1:10
@@ -86,16 +72,92 @@ for array = 1:n_arrays
                 modulation_matrix{target,array}(i,j) = (mean_ch_tgt(target, motor_electrodes{1,array}(i,j)) - mean_all(1,motor_electrodes{1,array}(i,j)))./mean_all(1,motor_electrodes{1,array}(i,j));
             end 
 
-            % Modulation mask
-            if p_value(motor_electrodes{1,array}(i,j)) < 0.05
-                modulation_mask{1,array}(i,j) = true;  
-            else 
-                modulation_mask{1,array}(i,j) = nan;  
-            end 
-            
         end 
     end 
 end
+
+
+%% Modulation mask
+for_mask  = cell(n_arrays, n_channels, n_targets);
+
+for array = 1:n_arrays
+    for channel = 1:n_channels
+        for target = 1:n_targets
+            matrix_for_mask = [];
+            for set = 1:n_sets
+                idx = find([data(set).Data(array).Interp.Target_ID] == target); 
+                for j = 1:length(idx)
+                    tmp_pre  = data(set).Data(array).Interp(idx(j)).Task_states{idx_pres, 2}(end-pre_bins+1:end, channel); 
+                    tmp_post = data(set).Data(array).Interp(idx(j)).Task_states{idx_reach,2}(1:post_bins, channel); 
+                    trial    = [tmp_pre; tmp_post];  
+
+                    firing_rate = trial ./ bin_size;
+                    matrix_for_mask = [matrix_for_mask, firing_rate]; 
+                end
+            end
+            for_mask{array, channel, target} = matrix_for_mask;
+        end
+    end
+end
+
+
+
+%% Permutation test
+n_perm = 10000;             % numero di permutazioni
+alpha  = 0.05;              % soglia di significatività
+
+p_perm   = nan(n_arrays*n_channels, n_targets);
+sig_mask = false(n_arrays*n_channels, n_targets);
+
+for array = 1:n_arrays
+    for channel = 1:n_channels
+        baseline = mean_baseline(channel, array); 
+      
+        for target = 1:n_targets
+            X = for_mask{array, channel, target}; 
+            trial_mean = mean(X, 1);                
+            d = trial_mean - baseline;            
+            
+            % permutation test one-sample
+            p = permutation_test_onesample(d, n_perm);
+            
+            p_perm((array-1)*n_channels + channel, target)   = p;
+            sig_mask((array-1)*n_channels + channel, target) = (p < alpha);
+        end
+        
+    end
+end
+
+%% Modulation mask a livello di canale
+modulation_mask = cell(1, n_arrays);
+
+for array = 1:n_arrays
+    mask_array = nan(10,10);  
+
+    for i = 1:10
+        for j = 1:10
+
+            channel = motor_electrodes{array}(i,j);  % numero del canale
+
+            if isnan(channel)
+                continue;
+            end
+
+            % controllo se almeno 1 target è significativo
+            if any(sig_mask(channel, :), 'all')
+                mask_array(i,j) = 1;   % modulante
+            else
+                mask_array(i,j) = nan; % non modulante
+            end
+
+        end
+    end
+
+    modulation_mask{array} = mask_array;
+end
+
+
+
 
 %% Color map
 blue = [106/255, 174/255, 233/255];
