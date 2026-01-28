@@ -46,14 +46,19 @@ n_arrays = 2;
 n_trials = 32;
 bin_size = 0.02;
 period_pre = 0.1;
-period_post = 0.1;
+period_post = 0.5;
 
-filename = { ...
-    '../00_Data_extraction/free-gaze_BCI02.mat' ...
-    '../00_Data_extraction/motor_BCI02.mat' ...
-    '../00_Data_extraction/controlled_BCI02.mat' ...
-    '../00_Data_extraction/gaze_BCI02.mat' ...
-};
+% filename = { ...
+%     '../00_Data_extraction/free-gaze_BCI02.mat' ...
+%     '../00_Data_extraction/motor_BCI02.mat' ...
+%     '../00_Data_extraction/controlled_BCI02.mat' ...
+%     '../00_Data_extraction/gaze_BCI02.mat' ...
+% };
+
+filename = {'../00_Data_extraction/free-gaze_BCI02_withtracker_exclUpdated.mat',... 
+                   '../00_Data_extraction/motor_BCI02_withtracker_exclUpdated.mat',...
+                   '../00_Data_extraction/controlled_BCI02_withtracker_exclUpdated.mat',...
+                   '../00_Data_extraction/gaze_BCI02_withtracker_exclUpdated.mat'};
 
 %% Costruzione vettore Y e matrice X per SVM + k-fold cross-validation
 cm_all  = cell(numel(filename),1);
@@ -65,10 +70,10 @@ for d = 1:numel(filename)
     [~, baseName, ext] = fileparts(filename{d});
     ds_name = [baseName ext];
 
-    if strcmp(ds_name, 'controlled_BCI02.mat')
+    if strcmp(ds_name, 'controlled_BCI02_withtracker_exclUpdated.mat')
         PRE  = "Gaze";
         POST = "Reach";
-    elseif strcmp(ds_name, 'gaze_BCI02.mat')
+    elseif strcmp(ds_name, 'gaze_BCI02_withtracker_exclUpdated.mat')
         PRE  = "Pres12";
         POST = "Gaze";
     else
@@ -113,14 +118,14 @@ for d = 1:numel(filename)
 
     X = cell2mat(X);
 
-    k_fold = 10;
-    [acc, cm] = svm_cv(X, Y, k_fold);
-
+    k_fold = 4;
+    [acc, cm] = svm_cv_OLD(X, Y, k_fold);
+    
     figure('Color','w');
     classes = unique(Y);
     classnames = arrayfun(@(c) sprintf('Target %d', c), classes, 'UniformOutput', false);
 
-    cc = confusionchart(cm, classnames, 'Normalization','row-normalized', ...
+    cc = confusionchart(cm, classes, 'Normalization','row-normalized', ...
         'RowSummary','off', 'ColumnSummary','off');
     cc.GridVisible = 'off';
     cc.DiagonalColor    = [0 0.35 0.7];
