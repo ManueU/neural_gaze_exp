@@ -53,8 +53,8 @@
 % 1: medial arm 
 % 2: lateral hand 
 
-clearvars
-close all
+clearvars -except mean_baseline std_baseline
+% close all
 clc
 
 sets = [2,4,5,6]; 
@@ -62,9 +62,10 @@ n_sets = numel(sets);
 n_arrays = 2;          
 n_channels = 96;    
 n_targets = 8; 
+n_trials = 32; 
 bin_size = 0.02;       
 period_pre = 1.0;     % intervallo migliore 
-period_post = 0.8;        
+period_post = 0.5;        
 
 filename = { ...
     '../00_Data_extraction/free-gaze_BCI02.mat', ...
@@ -94,8 +95,16 @@ for d = 1:numel(filename)
         PRE  = "Pres12";
         POST = "Reach";
     end
+
+    idx_pres  = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == PRE); 
+    idx_reach = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == POST); 
+    if isempty(idx_pres) || isempty(idx_reach)
+        error('Stati PRE/POST non trovati: controlla PRE/POST');
+    end
     
     % numero di bin PRE/POST
+    sigma_bins = 25 / 20;   % = 1.25
+
     pre_bins  = max(1, round(period_pre/bin_size));
     post_bins = max(1, round(period_post/bin_size));
     
@@ -104,78 +113,73 @@ for d = 1:numel(filename)
         pca_matrix = []; 
     
         for channel = 1:n_channels
-            firing_rate = []; 
-            
+            zscored_by_targets = []; 
+            ch_global = (array-1)*n_channels + channel;
+
             for target = 1:n_targets
-                M_spikes = [];
+                firing_rate = [];
     
                 for set_ = 1:n_sets
                     set = sets(set_);
-                    idx_pres  = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == PRE); 
-                    idx_reach = find(string(data(1).Data(1).Interp(1).Task_states(:,1)) == POST); 
-                    if isempty(idx_pres) || isempty(idx_reach)
-                        error('Stati PRE/POST non trovati: controlla PRE/POST');
-                    end
- 
                     idx = find([data(set).Data(array).Interp.Target_ID] == target); 
     
                     for j = 1:length(idx)
-                        % bin finestrati PRE/POST
                         tmp_pre  = data(set).Data(array).Interp(idx(j)).Task_states{idx_pres, 2}(end-pre_bins+1:end, channel); 
                         tmp_post = data(set).Data(array).Interp(idx(j)).Task_states{idx_reach,2}(1:post_bins, channel); 
-                        matrix   = [tmp_pre; tmp_post];  
+                        % tmp_pre  = data(set).Data(array).Interp(idx(j)).Task_states{idx_pres, 2}(1:end, channel); 
+                        % tmp_post = data(set).Data(array).Interp(idx(j)).Task_states{idx_reach,2}(1:end, channel); 
+                        vect   = [tmp_pre; tmp_post];  
+                        firing_rate = [firing_rate, vect./bin_size];
                         
-                        M_spikes = [M_spikes, matrix];   
                     end
                 end 
-
-                % media sui trial per target, poi FR in Hz
-                M_spikes_mean = mean(M_spikes, 2);     
-                firing_rate   = [firing_rate; M_spikes_mean ./ bin_size]; 
+                zscored = (mean(firing_rate,2) - mean_baseline.by_targets{1,d}(target, ch_global))./std_baseline.by_targets{1,d}(target, ch_global);
+                zscored(isnan(zscored) | isinf(zscored)) = 0;
+                ZS_smooth = smoothdata(zscored, 1, 'gaussian', sigma_bins * 6);
+                zscored_by_targets = [zscored_by_targets; ZS_smooth];   
             end 
-
-            % concatena i diversi canali
-            pca_matrix = [pca_matrix, firing_rate]; 
+            pca_matrix = [pca_matrix, zscored_by_targets]; 
         end
-
-        % concatena i due array
         pca_matrix_array = [pca_matrix_array, pca_matrix]; 
     end 
 
     condition = [condition; pca_matrix_array];
     condition_sep{d} = pca_matrix_array;
 end 
-
+% condition(:,14) = 0;
+% condition(:,15) = 0; 
 %% Filtraggio neuroni poco informativi
-meanFR = mean(condition, 1);          
-varFR = var(condition, 0, 1);
-
-minMeanFR = 1;       % Hz: neuroni con FR medio < 1 Hz vengono scartati
-minVarFR  = 0.5;     % varianza minima (su firing rate in Hz)
-
-valid_cols = (meanFR > minMeanFR) & (varFR > minVarFR);
-fprintf('\nNeuroni totali: %d, neuroni tenuti dopo filtro: %d\n', ...
-        numel(meanFR), sum(valid_cols));
-
-condition = condition(:, valid_cols);
-for d = 1:numel(condition_sep)
-    condition_sep{d} = condition_sep{d}(:, valid_cols);
-end
+% meanFR = mean(condition, 1);          
+% varFR = var(condition, 0, 1);
+% 
+% minMeanFR = 1;       % Hz: neuroni con FR medio < 1 Hz vengono scartati
+% minVarFR  = 0.5;     % varianza minima (su firing rate in Hz)
+% 
+% valid_cols = (meanFR > minMeanFR) & (varFR > minVarFR);
+% fprintf('\nNeuroni totali: %d, neuroni tenuti dopo filtro: %d\n', ...
+%         numel(meanFR), sum(valid_cols));
+% 
+% condition = condition(:, valid_cols);
+% for d = 1:numel(condition_sep)
+%     condition_sep{d} = condition_sep{d}(:, valid_cols);
+% end
 
 %% Costruzione tensore per dPCA
+% PCA matrix: [tempo × target × neuroni]
 % X: [neurone, tempo, target, condizione]
 
 n_bin = pre_bins + post_bins;
+% n_bin = length(tmp_pre) + length(tmp_post); 
 n_cond = numel(condition_sep);   
 n_neurons = size(condition, 2);     
 
 X = zeros(n_neurons, n_bin, n_targets, n_cond);
-for d = 1:n_cond
+for c = 1:n_cond
     % Reshape: [tempo, target, neurone]
-    cond_resh = reshape(condition_sep{d}, [n_bin, n_targets, n_neurons]);  
+    cond_resh = reshape(condition_sep{c,1} , [n_bin, n_targets, n_neurons]);  
     
     % Permuta per ottenere [neurone, tempo, target]
-    X(:,:,:,d) = permute(cond_resh, [3 1 2]);            
+    X(:,:,:,c) = permute(cond_resh, [3 1 2]);            
 end
 
 %% Vettore tempi (finestra PRE/POST)
@@ -207,27 +211,37 @@ combinedParams = { ...
    {3}, ...                        % 3: time-only
    {[1 2], [1 2 3]} };             % 4: interazione target/condizione
 
+   % {1, [1 3]}, ...                 % 1: target-like (Goal)
+   % {2, [2 3]}, ...                 % 2: condition-like (Gaze status)
+
 margNames   = {'Target', 'Gaze', 'Time', 'Tgt/Gaze Interaction'};
 margColours = [23 100 171; 187 20 25; 150 150 150; 114 97 171]/256;
 
 %% dPCA senza regularizzazione
+Xmat = reshape(firingRatesAverage, size(firingRatesAverage,1), []); % N x (S*D*T)
+varNeuron = var(Xmat, 0, 2);
+keep = varNeuron > 1e-12;
+firingRatesAverage = firingRatesAverage(keep,:,:,:);
+N = sum(keep);
+lambda = 1e-6;
+
 nComponents = 30;  
 
 [W, V, whichMarg] = dpca(firingRatesAverage, nComponents, ...
-    'combinedParams', combinedParams);
+    'combinedParams', combinedParams, 'lambda', lambda);
 
 explVar = dpca_explainedVariance(firingRatesAverage, W, V, ...
     'combinedParams', combinedParams);
 
-% dpca_plot(firingRatesAverage, W, V, @dpca_plot_default, ...
-%     'explainedVar', explVar, ...
-%     'marginalizationNames', margNames, ...
-%     'marginalizationColours', margColours, ...
-%     'whichMarg', whichMarg, ...
-%     'time', time, ...
-%     'timeEvents', timeEvents, ...
-%     'timeMarginalization', 3, ...
-%     'legendSubplot', 16);
+dpca_plot(firingRatesAverage, W, V, @dpca_plot_default, ...
+    'explainedVar', explVar, ...
+    'marginalizationNames', margNames, ...
+    'marginalizationColours', margColours, ...
+    'whichMarg', whichMarg, ...
+    'time', time, ...
+    'timeEvents', timeEvents, ...
+    'timeMarginalization', 3, ...
+    'legendSubplot', 16);
 
 fprintf('Target-like:      %d\n', sum(whichMarg == 1));
 fprintf('Condition-like:   %d\n', sum(whichMarg == 2));
@@ -313,7 +327,8 @@ colors = [
     0.980, 0.525, 0.580;   % pink
     0.468, 0.751, 0.797;   % turchese/azzurro scuro
     0.311, 0.444, 0.506;   % blu molto scuro
-];
+    0.311, 0.444, 0.506;
+    ];
 
 legendLabels = cell(size(filename));
 for i = 1:numel(filename)
@@ -377,7 +392,7 @@ title('Subspace Goal/Gaze');
 ciIDs = find(whichMarg == 3);           % condition-independent (tempo)
 goalIDs = find(whichMarg == 1);           % gaze-independent (target)
 gazeIDs = find(whichMarg == 2);           % main effect gaze
-interIDs = find(whichMarg == 4);           % target×gaze
+interIDs = find(whichMarg == 4);          % target×gaze
 
 gazeDepIDs = [gazeIDs(:); interIDs(:)];      % tutto ciò che è gaze-dependent
 
@@ -504,57 +519,52 @@ box off;
 
 
 %% Figure (4) - Fisso il target, vario la condizione
-Zcond = Zp1;           % [T x S x D]
-t = time(tMask);
-
-if size(colors,1) < D
-    colorsCond = lines(D);
-else
-    colorsCond = colors(1:D,:);
-end
-
-wSmooth = 25;
-
-figure('Color','w'); 
-for tgt = 1:S
-    subplot(ceil(S/2), 2, tgt); hold on; box off;
-    for cond = 1:D
-        y = Zcond(tMask, tgt, cond);
-        y = smoothdata(y, 'gaussian', wSmooth);
-        plot(t, y, 'LineWidth', 1.5, ...
-             'Color', colorsCond(cond,:));
-    end
-    title(sprintf('Target %d', tgt), 'FontWeight','normal');
-    xlabel('Time (s)');
-    ylabel('dPC cond');
-    grid on;
-    axis tight;
-end
-legend(legendLabels, 'Position',[0.85 0.1 0.1 0.1]);
+% Zcond = Zp1;           % [T x S x D]
+% t = time(tMask);
+% 
+% if size(colors,1) < D
+%     colorsCond = lines(D);
+% else
+%     colorsCond = colors(1:D,:);
+% end
+% 
+% wSmooth = 25;
+% 
+% figure('Color','w'); 
+% for tgt = 1:S
+%     subplot(ceil(S/2), 2, tgt); hold on; box off;
+%     for cond = 1:D
+%         y = Zcond(tMask, tgt, cond);
+%         y = smoothdata(y, 'gaussian', wSmooth);
+%         plot(t, y, 'LineWidth', 1.5, ...
+%              'Color', colorsCond(cond,:));
+%     end
+%     title(sprintf('Target %d', tgt), 'FontWeight','normal');
+%     xlabel('Time (s)');
+%     ylabel('dPC cond');
+%     grid on;
+%     axis tight;
+% end
+% legend(legendLabels, 'Position',[0.85 0.1 0.1 0.1]);
+% % sgtitle('Gaze subspace');
+% 
+% 
+% %% Figure (5) - Vario la condizione, fisso il target
+% figure('Color','w'); 
+% 
+% for cond = 1:D
+%     subplot(1, D, cond); hold on; box off;
+%     for tgt = 1:S
+%         y = Zcond(tMask, tgt, cond);
+%         y = smoothdata(y, 'gaussian', wSmooth);
+%         plot(t, y, 'LineWidth', 1.5, ...
+%              'Color', colors_target(tgt,:));
+%     end
+%     title(sprintf('%s', legendLabels{cond}), 'FontWeight','normal');
+%     xlabel('Time (s)');
+%     ylabel('dPC cond');
+%     grid on;
+%     axis tight;
+% end
 % sgtitle('Gaze subspace');
-
-
-%% Figure (5) - Vario la condizione, fisso il target
-figure('Color','w'); 
-
-for cond = 1:D
-    subplot(1, D, cond); hold on; box off;
-    for tgt = 1:S
-        y = Zcond(tMask, tgt, cond);
-        y = smoothdata(y, 'gaussian', wSmooth);
-        plot(t, y, 'LineWidth', 1.5, ...
-             'Color', colors_target(tgt,:));
-    end
-    title(sprintf('%s', legendLabels{cond}), 'FontWeight','normal');
-    xlabel('Time (s)');
-    ylabel('dPC target');
-    grid on;
-    axis tight;
-end
-% sgtitle('Gaze subspace');
-
-
-
-
-
 

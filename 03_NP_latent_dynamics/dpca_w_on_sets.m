@@ -14,7 +14,7 @@
 % 1: medial arm 
 % 2: lateral hand 
 
-clearvars
+clearvars -except mean_baseline std_baseline
 close all
 clc
 
@@ -25,10 +25,10 @@ n_channels = 96;
 n_targets = 8; 
 bin_size = 0.02;       
 period_pre = 1.0;      
-period_post = 0.8;     
+period_post = 0.3;     
 
 % SOLO free-gaze
-filename = '../00_Data_extraction/motor_BCI02.mat';
+filename = '../00_Data_extraction/free-gaze_BCI02.mat';
 
 %% Caricamento dati e definizione finestra PRE/POST
 fprintf('\nDataset (unico): %s\n', filename); 
@@ -111,6 +111,14 @@ for d = 1:n_sets
     condition_sep{d} = pca_matrix_array;
 end 
 
+
+baseline_mean = [mean_baseline(:,1)' mean_baseline(:,2)'];
+baseline_std = [std_baseline(:,1)' std_baseline(:,2)'];
+
+for d = 1:n_sets
+    condition_sep_sub{d} = (condition_sep{d,1} - baseline_mean)./baseline_std;
+end
+
 %% Filtraggio neuroni poco informativi
 meanFR = mean(condition, 1);          
 varFR  = var(condition, 0, 1);
@@ -123,21 +131,21 @@ fprintf('\nNeuroni totali: %d, neuroni tenuti dopo filtro: %d\n', ...
         numel(meanFR), sum(valid_cols));
 
 condition = condition(:, valid_cols);
-for d = 1:numel(condition_sep)
-    condition_sep{d} = condition_sep{d}(:, valid_cols);
+for d = 1:numel(condition_sep_sub)
+    condition_sep_sub{d} = condition_sep_sub{d}(:, valid_cols);
 end
 
 %% Costruzione tensore per dPCA
 % X: [neurone, tempo, target, condizione]
 
 n_bin     = pre_bins + post_bins;
-n_cond    = numel(condition_sep);      % ora = n_sets
+n_cond    = numel(condition_sep_sub);      % ora = n_sets
 n_neurons = size(condition, 2);     
 
 X = zeros(n_neurons, n_bin, n_targets, n_cond);
 for d = 1:n_cond
     % Reshape: [tempo, target, neurone]
-    cond_resh = reshape(condition_sep{d}, [n_bin, n_targets, n_neurons]);  
+    cond_resh = reshape(condition_sep_sub{d}, [n_bin, n_targets, n_neurons]);  
     
     % Permuta per ottenere [neurone, tempo, target]
     X(:,:,:,d) = permute(cond_resh, [3 1 2]);            
@@ -264,7 +272,13 @@ Zp1 = permute(Zp1, [3 1 2]);      % [T x S x D]
 tMask = true(1, T);    
 
 % colori: uno per ogni set/condizione
-colors = lines(D);
+colors = [
+    0.980, 0.525, 0.580;   % pink
+    0.468, 0.751, 0.797;   % turchese/azzurro scuro
+    0.311, 0.444, 0.506;   % blu molto scuro    
+    0.980, 0.741, 0.373;   % arancio
+    0.533, 0.533, 0.741;   % lavanda/grigio-blu morbido
+];
 
 % etichette leggenda: un nome per ogni set
 legendLabels = arrayfun(@(s) sprintf('set %d', s), sets, 'UniformOutput', false);
@@ -311,7 +325,7 @@ zlabel(sprintf('Condition Dim 1 (dPC %d)', kCondition));
 legend(hCond, legendLabels, 'Location', 'best');
 
 view([-40 25]);
-title('Subspace Goal / Set (free-gaze only)');
+title('Subspace Goal/Set');
 
 %% Figure (2) - Time vs Target vs Condition 
 
@@ -489,7 +503,7 @@ for cond = 1:D
     end
     title(sprintf('%s', legendLabels{cond}), 'FontWeight','normal');
     xlabel('Time (s)');
-    ylabel('dPC target');
+    ylabel('dPC cond');
     grid on;
     axis tight;
 end
