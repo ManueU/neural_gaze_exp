@@ -1,5 +1,5 @@
 clear all
-% close all
+close all
 clc
 
 [file, path] = uigetfile('*.mat', 'Seleziona un file MAT');
@@ -23,8 +23,11 @@ switch (paradigm)
         % set_numbers = [4, 7, 9, 16, 20, 22]; 
         % sets = {set04, set07, set09, set16, set20, set22};
         % BCI02 
-        set_numbers = [4, 9, 12, 14, 21, 25]; 
-        sets = {set04, set09, set12, set14, set21, set25};
+        % set_numbers = [4, 9, 12, 14, 21, 25]; 
+        % sets = {set04, set09, set12, set14, set21, set25};
+        % BCI02 with tracker
+        set_numbers = [4, 8, 11, 13, 20, 24]; 
+        sets = {allData.set04, allData.set08, allData.set11, allData.set13, allData.set20, allData.set24};
     case "Gaze"
         % BCI03 1 dataset
         % set_numbers = [3,8,14,18]; 
@@ -32,9 +35,9 @@ switch (paradigm)
         % BCI03 2 dataset
         % set_numbers = [2, 8, 12, 13, 18, 23]; 
         % sets = {set02, set08, set12, set13, set18, set23};
-        % BCI02
-        set_numbers = [1, 6, 13, 17, 18, 23]; 
-        sets = {set01, set06, set13, set17, set18, set23};
+        % BCI02 with tracker
+        set_numbers = [1, 6, 12, 16, 17, 22]; 
+        sets = {allData.set01, allData.set06, allData.set12, allData.set16, allData.set17, allData.set22};
     case "Motor"
         % BCI03 1 dataset        
         % set_numbers = [4,9,11,16];
@@ -43,8 +46,11 @@ switch (paradigm)
         % set_numbers = [3, 5, 10, 15, 17, 24];
         % sets = {set03, set05, set10, set15, set17, set24};       
         % BCI02
-        set_numbers = [2, 7, 10, 15, 20, 22]; 
-        sets = {set02, set07, set10, set15, set20, set22};
+        % set_numbers = [2, 7, 10, 15, 20, 22]; 
+        % sets = {set02, set07, set10, set15, set20, set22};
+        % BCI02 with tracker
+        set_numbers = [2, 7, 9, 14, 19, 21]; 
+        sets = {allData.set02, allData.set07, allData.set09, allData.set14, allData.set19, allData.set21};
     case "Gaze + Motor"
         % BCI03 1 dataset                
         % set_numbers = [5,7,12,17]; 
@@ -53,17 +59,20 @@ switch (paradigm)
         % set_numbers = [1, 6, 11, 14, 19, 21];
         % sets = {set01, set06, set11, set14, set19, set21};    
         % BCI02
-        set_numbers = [3, 5, 11, 16, 19, 24]; 
-        sets = {set03, set05, set11, set16, set19, set24};
+        % set_numbers = [3, 5, 11, 16, 19, 24]; 
+        % sets = {set03, set05, set11, set16, set19, set24};
+        % BCI02 with tracker
+        set_numbers = [3, 5, 10, 15, 18, 23]; 
+        sets = {allData.set03, allData.set05, allData.set10, allData.set15, allData.set18, allData.set23};
     case "New dataset"
         set_numbers = [1, 2, 3, 4];
         sets = {set01, set02, set03, set04}; 
 end 
 
 get_start_idx = @(S) find(S.trial_num == 1, 1);
-idx_start = arrayfun(@(i) get_start_idx(sets{i}), 1:numel(sets));
+idx_start = arrayfun(@(i) get_start_idx(sets{i}.data), 1:numel(sets));
 
-ends    = cellfun(@(S) S.trial_num(end), sets);
+ends    = cellfun(@(S) S.data.trial_num(end), sets);
 offsets = [0, cumsum(ends(1:end-1))];
 
 MaskedSpikeCounts_tmp = []; 
@@ -71,26 +80,26 @@ task_state_labels_tmp = {};
 target_coordinates_tmp = []; 
 trial_labels_tmp = []; 
 for i = 1:length(set_numbers)
-    MaskedSpikeCounts = [MaskedSpikeCounts_tmp; sets{i}.SpikeCount(idx_start(i):end, 1:5:end)];
+    MaskedSpikeCounts = [MaskedSpikeCounts_tmp; sets{i}.data.SpikeCount(idx_start(i):end, 1:5:end)];
     MaskedSpikeCounts_tmp = MaskedSpikeCounts; 
     
-    task_state_labels = [task_state_labels_tmp; sets{i}.TaskStateMasks.state_name(idx_start(i):end)'];
+    task_state_labels = [task_state_labels_tmp; sets{i}.data.TaskStateMasks.state_name(idx_start(i):end)'];
     task_state_labels_tmp = task_state_labels; 
 
-    target_coordinates = [target_coordinates_tmp; sets{i}.TaskStateMasks.target(2, idx_start(i):end)'  sets{i}.TaskStateMasks.target(3, idx_start(i):end)']; 
+    target_coordinates = [target_coordinates_tmp; sets{i}.data.TaskStateMasks.target(2, idx_start(i):end)'  sets{i}.data.TaskStateMasks.target(3, idx_start(i):end)']; 
     target_coordinates_tmp = target_coordinates; 
 
-    trial_labels = [trial_labels_tmp; sets{i}.trial_num(idx_start(i):end)' + offsets(i)]; 
+    trial_labels = [trial_labels_tmp; sets{i}.data.trial_num(idx_start(i):end)' + offsets(i)]; 
     trial_labels_tmp = trial_labels; 
 
 end 
 
-states = cellfun(@(s) sort(string(s.TaskStateMasks.states(:))), sets, 'UniformOutput', false);
+states = cellfun(@(s) sort(string(s.data.TaskStateMasks.states(:))), sets, 'UniformOutput', false);
 ref = states{1};
 ok  = all(cellfun(@(v) isequal(v, ref), states));
 
 if ok
-    state_names = string(sets{1}.TaskStateMasks.states);
+    state_names = string(sets{1}.data.TaskStateMasks.states);
 else
     disp("Problem!")
 end
@@ -118,13 +127,14 @@ target_info = target_coordinates;
 target_info(:,3) = NaN;
 refXY = [  0      0
            0      0.2
-           0.14   0.14
+           % 0.14   0.14
            0.2    0
-           0.14  -0.14
+           % 0.14  -0.14
            0     -0.2
-          -0.14  -0.14
+          % -0.14  -0.14
           -0.2    0
-          -0.14   0.14 ];
+          % -0.14   0.14 
+          ];
 codes = (0:8).';
 tol = 1e-6;
 [tf, loc] = ismembertol(target_info(:,1:2), refXY, tol, 'ByRows', true);
@@ -320,4 +330,4 @@ end
 data = dataset_l1;
 clearvars -except data
 
-save("free-gaze_BCI03.mat", "data"); 
+save("gaze_BCI02_withtracker.mat", "data"); 
