@@ -44,8 +44,8 @@
 % =========================================================
 
 
-clearvars
-close all
+% clearvars
+% close all
 clc 
 
 n_sets = 6;
@@ -74,7 +74,7 @@ for d = 1:numel(filename)
     load(filename{d});
 
     % bins per trial
-    N = size(data(1).Data(1).Resampled(1).Trial, 1); 
+    N = size(data(1).Data(1).Interp(1).Trial, 1); 
     rec_duration = N*bin_size; 
     
     % finestra scorrevole
@@ -86,7 +86,7 @@ for d = 1:numel(filename)
     % etichette Y
     Y = []; 
     for set = 1:n_sets
-        Y = [Y; [data(set).Data(1).Resampled.Target_ID]']; 
+        Y = [Y; [data(set).Data(1).Interp.Target_ID]']; 
     end  
     classes = unique(Y,'stable');
     n_classes = numel(classes);
@@ -108,7 +108,7 @@ for d = 1:numel(filename)
             for trial = 1:n_trials
                 SVM_matrix = []; 
                 for array = 1:n_arrays
-                    SVM_matrix = [SVM_matrix, data(set).Data(array).Resampled(trial).Trial(start_w:end_w, :)]; 
+                    SVM_matrix = [SVM_matrix, data(set).Data(array).Interp(trial).Trial(start_w:end_w, :)]; 
                 end 
                 X{j} = mean(SVM_matrix./bin_size,1);
                 j = j + 1; 
@@ -130,7 +130,7 @@ for d = 1:numel(filename)
     end 
 
     % Ricavo tempi degli stati ed onset di Reach
-    Task_states = data(1).Data(2).Resampled(1).Task_states;
+    Task_states = data(1).Data(2).Interp(1).Task_states;
     n_states = size(Task_states, 1);
     events_time = zeros(n_states, 1);
     for i = 1:n_states
