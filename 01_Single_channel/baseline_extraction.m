@@ -40,17 +40,16 @@ end
 clearvars -except dataset baseline baseline_const
 
 %% Baseline as suggested by John
-filename = { ...
-    '../00_Data_extraction/free-gaze_BCI02.mat' ...
-    '../00_Data_extraction/motor_BCI02.mat' ...
-    '../00_Data_extraction/controlled_BCI02.mat' ...
-    '../00_Data_extraction/gaze_BCI02.mat'
-};
+filename = {'../00_Data_extraction/free-gaze_BCI02_withtracker_exclUpdated.mat',... 
+                   '../00_Data_extraction/motor_BCI02_withtracker_exclUpdated.mat',...
+                   '../00_Data_extraction/controlled_BCI02_withtracker_exclUpdated.mat',...
+                   '../00_Data_extraction/gaze_BCI02_withtracker_exclUpdated.mat'};
+
 nCond = numel(filename);
 
 % Single channel
-n_sets = 5; 
-sets_baseline = [1,2,4,5,6];
+n_sets = 6; 
+sets_baseline = [1,2,3,4,5,6];
 n_arrays = 2;
 n_channels = 96;
 n_trials = 32;  
@@ -83,23 +82,22 @@ for array = 1:n_arrays
 end 
 
 
-%% Baseline as suggested by Charles 
-filename = { ...
-    '../00_Data_extraction/free-gaze_BCI02.mat' ...
-    '../00_Data_extraction/motor_BCI02.mat' ...
-    '../00_Data_extraction/controlled_BCI02.mat'
-};
+%% Baseline as suggested by Charles - condition/targets
+filename = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02.mat',... 
+           '../00_Data_extraction/BCI02_Session_0924/motor_BCI02.mat',...
+           '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02.mat',...
+           '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02.mat'};
 
 
 % Single channel
-sets_baseline = [2,4,5,6];
+sets_baseline = [1,2,3,4,5,6];
 n_sets = length(sets_baseline);
 n_arrays = 2;
 n_channels = 96;
 n_targets = 8; 
-n_trials = 32;
+n_trials = 16;
 bin_size = 0.02;
-period = 0.5; 
+period = 0.1; 
 bins_period = max(1, round(period/bin_size));
 
 
@@ -159,13 +157,16 @@ for d = 1:numel(filename)
                             if ~mask(idx), continue; end
     
                             trial_spikes = data(set).Data(array).Interp(trial).Task_states{phase_id,2}(end-bins_period+1:end, channel);
-                            X(:, end+1) = trial_spikes; 
+                            X(:, end+1) = trial_spikes;
+                            % X = [X; mean(trial_spikes,1)];
                         end
                     end
-    
+                    
                     mean_across_trials = mean(X, 2);                 
                     bmean_by_target(target, ch_global) = mean(mean_across_trials)./bin_size;  
                     bstd_by_target(target, ch_global) = std(mean_across_trials)./bin_size;
+                    % bmean_by_target(target, ch_global) = mean(X)./bin_size;  
+                    % bstd_by_target(target, ch_global) = std(X)./bin_size;
                 end
             end
         end 
@@ -176,3 +177,107 @@ for d = 1:numel(filename)
     mean_baseline.by_targets{1,d} = bmean_by_target;
     std_baseline.by_targets{1,d} = bstd_by_target;
 end 
+
+
+%% Baseline globale
+filenames = {
+    '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat', ...
+    '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat', ...
+    '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'
+};
+
+n_sets     = 6;
+n_arrays   = 2;
+n_channels = 96;
+n_trials   = 16;
+
+bin_size    = 0.02;
+period      = 0.1;
+bins_period = max(1, round(period / bin_size));
+
+phase_id = 1;
+n_ch     = n_arrays * n_channels;
+
+verbose = false;
+
+% Carica i file una sola volta
+all_data = cell(size(filenames));
+for d = 1:numel(filenames)
+    tmp = load(filenames{d});
+    all_data{d} = tmp.data;
+end
+
+sum_baseline   = zeros(1, n_ch);
+sumsq_baseline = zeros(1, n_ch);
+count_baseline = zeros(1, n_ch);
+
+for d = 1:numel(all_data)
+    data = all_data{d};
+
+    for set_idx = 1:n_sets
+        for array = 1:n_arrays
+            for trial = 1:n_trials
+
+                % Salta trial esclusi
+                if data(set_idx).Data(array).Interp(trial).Excluded ~= 0
+                    if verbose
+                        fprintf('Excluded trial: file=%d, set=%d, array=%d, trial=%d\n', d, set_idx, array, trial);
+                    end
+                    continue;
+                end
+
+                x = data(set_idx).Data(array).Interp(trial).Task_states{phase_id, 2};
+
+                if isempty(x)
+                    continue;
+                end
+
+                if size(x, 1) < bins_period
+                    if verbose
+                        fprintf('Too few bins: file=%d, set=%d, array=%d, trial=%d\n', d, set_idx, array, trial);
+                    end
+                    continue;
+                end
+
+                % Baseline: ultime bins_period righe, tutti i canali dell'array
+                bs = x(end-bins_period+1:end, 1:n_channels);   % [bins_period x n_channels]
+
+                % Indici globali dei canali dell'array corrente
+                ch_idx = (array-1)*n_channels + (1:n_channels);
+
+                % Statistiche con omitnan per colonna
+                valid_mask = ~isnan(bs);
+                count_baseline(ch_idx) = count_baseline(ch_idx) + sum(valid_mask, 1);
+                sum_baseline(ch_idx)   = sum_baseline(ch_idx)   + sum(bs, 1, 'omitnan');
+                sumsq_baseline(ch_idx) = sumsq_baseline(ch_idx) + sum(bs.^2, 1, 'omitnan');
+            end
+        end
+    end
+end
+
+% Media
+mean_baseline_common = sum_baseline ./ count_baseline;
+
+% Deviazione standard campionaria
+std_baseline_common = nan(1, n_ch);
+valid_ch = count_baseline > 1;
+
+std_baseline_common(valid_ch) = sqrt( ...
+    (sumsq_baseline(valid_ch) - ...
+    (sum_baseline(valid_ch).^2 ./ count_baseline(valid_ch))) ./ ...
+    (count_baseline(valid_ch) - 1) );
+
+% Conversione in firing rate
+mean_baseline_common = mean_baseline_common / bin_size;
+std_baseline_common  = std_baseline_common  / bin_size;
+
+[data_folder, ~, ~] = fileparts(filenames{1});
+
+output_file = fullfile(data_folder, 'baseline_common.mat');
+
+save(output_file, ...
+    'mean_baseline_common', ...
+    'std_baseline_common', ...
+    'bin_size', ...
+    'period', ...
+    'bins_period');
