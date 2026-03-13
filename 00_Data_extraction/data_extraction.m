@@ -16,57 +16,21 @@ paradigm = input('Please enter the condition you want to analyse (i.e., ''Free-g
 paradigm = string(paradigm);
 switch (paradigm) 
     case "Free-gaze"
-        % BCI03 1 dataset
-        % set_numbers = [2,10,13,15]; 
-        % sets = {set002, set010, set013, set015};
-        % BCI03 2 dataset
-        % set_numbers = [4, 7, 9, 16, 20, 22]; 
-        % sets = {set04, set07, set09, set16, set20, set22};
-        % BCI02 
-        % set_numbers = [4, 9, 12, 14, 21, 25]; 
-        % sets = {set04, set09, set12, set14, set21, set25};
-        % BCI02 with tracker
-        set_numbers = [4, 8, 11, 13, 20, 24]; 
-        sets = {allData.set04, allData.set08, allData.set11, allData.set13, allData.set20, allData.set24};
+        % BCI02 with analog input 11/03
+        set_numbers = [4,8,11,13,17,24]; 
+        sets = {allData.set04, allData.set08, allData.set11, allData.set13, allData.set17, allData.set24};
     case "Gaze"
-        % BCI03 1 dataset
-        % set_numbers = [3,8,14,18]; 
-        % sets = {set003, set008, set014, set018};
-        % BCI03 2 dataset
-        % set_numbers = [2, 8, 12, 13, 18, 23]; 
-        % sets = {set02, set08, set12, set13, set18, set23};
-        % BCI02 with tracker
-        set_numbers = [1, 6, 12, 16, 17, 22]; 
-        sets = {allData.set01, allData.set06, allData.set12, allData.set16, allData.set17, allData.set22};
+        % BCI02 with analog input 11/03
+        set_numbers = [1,6,12,16,20,21]; 
+        sets = {allData.set01, allData.set06, allData.set12, allData.set16, allData.set20, allData.set21};
     case "Motor"
-        % BCI03 1 dataset        
-        % set_numbers = [4,9,11,16];
-        % sets = {set004, set009, set011, set016};
-        % BCI03 2 dataset        
-        % set_numbers = [3, 5, 10, 15, 17, 24];
-        % sets = {set03, set05, set10, set15, set17, set24};       
-        % BCI02
-        % set_numbers = [2, 7, 10, 15, 20, 22]; 
-        % sets = {set02, set07, set10, set15, set20, set22};
-        % BCI02 with tracker
-        set_numbers = [2, 7, 9, 14, 19, 21]; 
-        sets = {allData.set02, allData.set07, allData.set09, allData.set14, allData.set19, allData.set21};
+        % BCI02 with analog input 11/03
+        set_numbers = [2,7,9,14,19,23]; 
+        sets = {allData.set02, allData.set07, allData.set09, allData.set14, allData.set19, allData.set23};
     case "Gaze + Motor"
-        % BCI03 1 dataset                
-        % set_numbers = [5,7,12,17]; 
-        % sets = {set005, set007, set012, set017}; 
-        % BCI03 2 dataset                
-        % set_numbers = [1, 6, 11, 14, 19, 21];
-        % sets = {set01, set06, set11, set14, set19, set21};    
-        % BCI02
-        % set_numbers = [3, 5, 11, 16, 19, 24]; 
-        % sets = {set03, set05, set11, set16, set19, set24};
-        % BCI02 with tracker
-        set_numbers = [3, 5, 10, 15, 18, 23]; 
-        sets = {allData.set03, allData.set05, allData.set10, allData.set15, allData.set18, allData.set23};
-    case "New dataset"
-        set_numbers = [1, 2, 3, 4];
-        sets = {set01, set02, set03, set04}; 
+        % BCI02 with analog input 11/03
+        set_numbers = [3,5,10,15,18,22]; 
+        sets = {allData.set03, allData.set05, allData.set10, allData.set15, allData.set18, allData.set22};
 end 
 
 get_start_idx = @(S) find(S.trial_num == 1, 1);
@@ -127,13 +91,13 @@ target_info = target_coordinates;
 target_info(:,3) = NaN;
 refXY = [  0      0
            0      0.2
-           % 0.14   0.14
+           0.14   0.14
            0.2    0
-           % 0.14  -0.14
+           0.14  -0.14
            0     -0.2
-          % -0.14  -0.14
+          -0.14  -0.14
           -0.2    0
-          % -0.14   0.14 
+          -0.14   0.14 
           ];
 codes = (0:8).';
 tol = 1e-6;
@@ -328,6 +292,6 @@ for set = 1:n_sets
 end
 
 data = dataset_l1;
-clearvars -except data
+clearvars -except data allData
 
-save("gaze_BCI02_withtracker.mat", "data"); 
+save("gaze_BCI02_withtracker_1103.mat", "data"); 
