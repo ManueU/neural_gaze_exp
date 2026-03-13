@@ -1,4 +1,4 @@
-function [acc, cm] = svm_cv_1(X, Y, k_fold)
+function [acc, cm] = svm_cv(X, Y, k_fold)
     cv = cvpartition(Y, 'KFold', k_fold);
     Y_true = []; Y_pred = [];
 
