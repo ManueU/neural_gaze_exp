@@ -18,7 +18,7 @@
 %    - si costruisce così la matrice delle feature X
 %      (tutti i trial × tutti i canali)
 %    - si costruisce il vettore delle etichette Y (Target_ID)
-%    - si esegue una k-fold cross-validation (k = n) tramite
+%    - si esegue una k-fold cross-validation (k = 5) tramite
 %      la funzione esterna svm_cv per addestrare un SVM multiclass
 %      e stimare l’accuratezza della finestra corrente
 %    - vengono salvate:
@@ -41,15 +41,15 @@
 
 
 clearvars
-% close all
+close all
 clc 
 
-n_sets = 6;
+n_sets = 4;
 n_arrays = 2;
 n_trials = 32;
 bin_size = 0.02;
 
-filename = '../00_Data_extraction/gaze_BCI02_withtracker_exclUpdated.mat';
+filename = '../00_Data_extraction/free-gaze_BCI03.mat';
 load(filename)
 
 %% Decoding over time with SVM
@@ -66,8 +66,7 @@ N_o = round(overlap/bin_size);
 % etichette Y
 Y = []; 
 for set = 1:n_sets
-    idx = [data(set).Data(1).Interp.Excluded] == 0;
-    Y = [Y; [data(set).Data(1).Interp(idx).Target_ID]'];  
+    Y = [Y; [data(set).Data(1).Interp.Target_ID]']; 
 end  
 classes = unique(Y,'stable');
 n_classes = numel(classes);
@@ -75,157 +74,94 @@ n_classes = numel(classes);
 % numero finestre
 n_acc = floor((N - N_w)/(N_w-N_o)) + 1; 
 acc_overall = zeros(n_acc,1);
-recall_class   = zeros(n_acc, n_classes);
-balacc_overall = zeros(n_acc,1);
+acc_class   = zeros(n_acc, n_classes);
 
 % loop sulle finestre
 start_w = 1; 
 end_w = start_w + N_w - 1; 
-n_valid = sum( arrayfun(@(s) sum([data(s).Data(1).Interp.Excluded] == 0), 1:n_sets) );
 
 for w = 1:n_acc
-    X = cell(n_valid, 1);
+    X = cell(n_trials*n_sets,1);
     j = 1; 
     for set = 1:n_sets
         for trial = 1:n_trials
             SVM_matrix = []; 
-            if data(set).Data(1).Interp(trial).Excluded == 0
-                for array = 1:n_arrays
-                    SVM_matrix = [SVM_matrix, data(set).Data(array).Interp(trial).Trial(start_w:end_w, :)];   
-                end
-                X{j} = mean(SVM_matrix./bin_size,1);
-                j = j + 1; 
-            end        
+            for array = 1:n_arrays
+                SVM_matrix = [SVM_matrix, data(set).Data(array).Interp(trial).Trial(start_w:end_w, :)]; 
+            end 
+            X{j} = mean(SVM_matrix./bin_size,1);
+            j = j + 1; 
         end   
     end 
     X = cell2mat(X); 
     
     % k-fold SVM
-    % --- Controllo sbilanciamento e k-fold adattivo
-    Ycat = categorical(Y);
-    counts = countcats(Ycat);
-    minCount = min(counts);
+    k_fold = 2; 
+    [acc_overall(w), cm{w}] = svm_cv_1(X, Y, k_fold);
     
-    % k-fold non può superare il numero di campioni della classe più rara
-    k_fold = min(4, minCount);   % oppure min(5, minCount)
-    
-    if k_fold < 2
-        error('Una o più classi hanno <2 campioni: impossibile fare k-fold CV.');
-    end
-    
-    fprintf('Class counts: '); fprintf('%d ', counts); fprintf('\n');
-    fprintf('Using k_fold = %d (min class count = %d)\n', k_fold, minCount);
-
-    [acc_overall(w), cm{w}, metrics{w}] = svm_cv(X, Y, k_fold);
-    
-    balacc_overall(w) = metrics{w}.balancedAccuracy;   % [0..1]
-
     % accuracy per classe (diag della cm normalizzata per riga) 
     cm_norm = cm{w} ./ max(sum(cm{w},2),1);
-    recall_class(w,:) = diag(cm_norm)*100;
+    acc_class(w,:) = diag(cm_norm)*100;
 
     % prossima finestra
     start_w = start_w + (N_w - N_o); 
     end_w = start_w + N_w - 1;  
 end 
 
-%% Figure (single panel: overall + per-class recall + correct chance)
-figure('Color','White'); hold on;
-
-events_time_tmp = [];
+%% Figure
+figure('Color', 'White')
+events_time_tmp = []; 
 for i = 1:length(data(1).Data(2).Interp(1).Task_states)
     events_time = [events_time_tmp; size(data(1).Data(2).Interp(1).Task_states{i,2},1)*bin_size];
-    events_time_tmp = events_time;
-end
-increment_times = cumsum(events_time);
-
-t = (((0:n_acc-1)*(N_w - N_o)) + N_w/2) * bin_size;
-
-w_smooth = 5;
-acc_smooth = smoothdata(acc_overall*100, 'gaussian', w_smooth);
-bal_smooth = smoothdata(balacc_overall*100, 'gaussian', w_smooth);
-
-recall_class_smooth = zeros(size(recall_class));
-for c = 1:n_classes
-    recall_class_smooth(:,c) = smoothdata(recall_class(:,c), 'gaussian', w_smooth);
-end
+    events_time_tmp = events_time; 
+end 
+increment_times = cumsum(events_time); 
 
 colors = [
-    0.839, 0.153, 0.157;
-    0.122, 0.467, 0.706;
-    0.172, 0.627, 0.172;
-    0.580, 0.404, 0.741;
-    1.000, 0.498, 0.055;
-    0.737, 0.741, 0.133;
-    0.549, 0.337, 0.294;
-    0.890, 0.466, 0.760;
+    0.839, 0.153, 0.157;  % rosso
+    0.122, 0.467, 0.706;  % blu
+    0.172, 0.627, 0.172;  % verde
+    0.580, 0.404, 0.741;  % viola
+    1.000, 0.498, 0.055;  % arancione
+    0.737, 0.741, 0.133;  % giallo oliva
+    0.549, 0.337, 0.294;  % marrone
+    0.890, 0.466, 0.760;  % rosa
 ];
+alpha = 0.5;
 
-% If more classes than colors, repeat (robust)
-if n_classes > size(colors,1)
-    colors = repmat(colors, ceil(n_classes/size(colors,1)), 1);
-end
-
+t = (((0:n_acc-1)*(N_w - N_o)) + N_w/2)*bin_size;
+w_smooth = 5;
 for c = 1:n_classes
-    plot(t, recall_class_smooth(:,c), ...
-        'LineWidth', 0.9, ...
-        'Color', colors(c,:), ...
-        'HandleVisibility','off');
+    acc_smooth = smoothdata(acc_class(:, c), 'gaussian', w_smooth);
+    plot(t, acc_smooth, 'LineWidth', 1.0, 'Color', [colors(c,:),  alpha], 'HandleVisibility','off'), hold on
 end
+acc_smooth_overall = smoothdata(acc_overall, 'gaussian', w_smooth);
+plot(t, acc_smooth_overall*100, 'LineWidth', 1.5, 'Color', 'k', 'DisplayName','Overall'), hold on
 
-p1 = plot(t, acc_smooth, 'k', 'LineWidth', 1.5, 'DisplayName','Accuracy');
-p2 = plot(t, bal_smooth, 'k--', 'LineWidth', 1.5, 'DisplayName','Balanced accuracy');
-
-% Chance levels 
-Ycat = categorical(Y);
-p = countcats(Ycat) / numel(Ycat);
-chance_acc = max(p) * 100;        % majority baseline for accuracy
-chance_bal = (1/n_classes) * 100; % uniform chance baseline
-
-% yline(chance_acc, '--', 'Chance (majority)', 'HandleVisibility','off');
-yline(chance_bal, ':',  'Chance',      'HandleVisibility','off');
-
-% Events (lines + labels) 
 if exist('increment_times','var') && ~isempty(increment_times)
-    
-    % Free-gaze
-    % labels = {"Target cue", "Go cue"}; 
-    % xline(increment_times(1:2), '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
-
-    % Gaze-on-center
-    % labels = {"", "Target cue", "Go cue"}; 
-    % xline(increment_times(2:3), '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
-
-    % Gaze-on-target
-    labels = {"", "Target cue", "Go cue - gaze", "Go cue - cursor"}; 
-    xline(increment_times(2:4), '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
-
-    % Gaze-only
-    % labels = {"", "Target cue", "Go cue"}; 
-    % xline(increment_times(2:3), '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
-
+    xline(increment_times, '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
+    labels = {"Target cue", "Go cue"};
 
     ylim([0 100]);
     ax = gca;
-    y_pos = ax.YLim(2) - 5;
 
-    for i = 2:4
-        x_pos = increment_times(i) - 0.2;
+    y_pos = ax.YLim(2) - 5;
+    for i = 1:2
+        x_pos = increment_times(i) - 0.3;
         text(x_pos - 0.05, y_pos, labels{i}, ...
-            'HorizontalAlignment','right', ...
-            'VerticalAlignment','top', ...
-            'Rotation',90, ...
-            'FontSize',11);
+            'HorizontalAlignment', 'right', ...
+            'VerticalAlignment', 'top', ...
+            'Rotation', 90, ...
+            'FontSize', 11);
     end
 end
 
-% Axes formatting
-ylim([0 100]);
-xlim([0 rec_duration]);
+
+
+yline((1/n_classes)*100,'-', 'Chance', 'HandleVisibility','off'); 
+% legend show; 
 yticks(0:20:100);
 xlabel('Time (s)');
-ylabel('Performance (%)');
-box off;
-
-% Legend only for overall curves
-legend([p1 p2], 'Location','best');
+ylabel('Accuracy (%)');
+xlim([0 rec_duration]);
+box off; 
