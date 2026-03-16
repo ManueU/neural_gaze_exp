@@ -38,27 +38,21 @@
 % =========================================================
 
 clearvars
-% close all
+close all
 clc
 
 n_sets = 6;
+sets_dec = [1,2,3,4,5,6];
 n_arrays = 2;
-n_trials = 32;
+n_trials = 16;
 bin_size = 0.02;
 period_pre = 0.1;
 period_post = 0.5;
 
-% filename = { ...
-%     '../00_Data_extraction/free-gaze_BCI02.mat' ...
-%     '../00_Data_extraction/motor_BCI02.mat' ...
-%     '../00_Data_extraction/controlled_BCI02.mat' ...
-%     '../00_Data_extraction/gaze_BCI02.mat' ...
-% };
-
-filename = {'../00_Data_extraction/free-gaze_BCI02_withtracker_exclUpdated.mat',... 
-                   '../00_Data_extraction/motor_BCI02_withtracker_exclUpdated.mat',...
-                   '../00_Data_extraction/controlled_BCI02_withtracker_exclUpdated.mat',...
-                   '../00_Data_extraction/gaze_BCI02_withtracker_exclUpdated.mat'};
+filename = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02.mat',... 
+                   '../00_Data_extraction/BCI02_Session_0924/motor_BCI02.mat',...
+                   '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02.mat',...
+                   '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02.mat'};
 
 %% Costruzione vettore Y e matrice X per SVM + k-fold cross-validation
 cm_all  = cell(numel(filename),1);
@@ -70,10 +64,10 @@ for d = 1:numel(filename)
     [~, baseName, ext] = fileparts(filename{d});
     ds_name = [baseName ext];
 
-    if strcmp(ds_name, 'controlled_BCI02_withtracker_exclUpdated.mat')
+    if strcmp(ds_name, 'controlled_BCI02.mat')
         PRE  = "Gaze";
         POST = "Reach";
-    elseif strcmp(ds_name, 'gaze_BCI02_withtracker_exclUpdated.mat')
+    elseif strcmp(ds_name, 'gaze_BCI02.mat')
         PRE  = "Pres12";
         POST = "Gaze";
     else
@@ -82,7 +76,8 @@ for d = 1:numel(filename)
     end
 
     Y = [];
-    for set = 1:n_sets
+    for set_ = 1:n_sets
+        set = sets_dec(set_);
         Y = [Y; [data(set).Data(1).Interp.Target_ID]'];
     end
 
@@ -98,7 +93,8 @@ for d = 1:numel(filename)
     j = 1;
     X = cell(n_trials*n_sets,1);
 
-    for set = 1:n_sets
+    for set_ = 1:n_sets
+        set = sets_dec(set_);
         for trial = 1:n_trials
 
             tmp_pre = [];
@@ -119,7 +115,8 @@ for d = 1:numel(filename)
     X = cell2mat(X);
 
     k_fold = 4;
-    [acc, cm] = svm_cv_OLD(X, Y, k_fold);
+    rng(42);
+    [acc, cm] = svm_cv(X, Y, k_fold);
     
     figure('Color','w');
     classes = unique(Y);
