@@ -1,4 +1,4 @@
-%% correlation between  two smoothed_modulation_matrix
+%% correlation between two smoothed_modulation_matrix
 function correlationBetweenTargetPreferenceMaps(correlation_maps, data, labels_cond)
 
     if data.array == 1

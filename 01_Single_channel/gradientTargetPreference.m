@@ -1,5 +1,5 @@
 %% mappa somatotopica inspired by Natalya's paper
-function [spearman_r]= gradientTargetPreference(smoothed_modulation_matrix, data, labels_cond, d)
+function [spearman_r] = gradientTargetPreference(smoothed_modulation_matrix, data, labels_cond, d)
 
     % --- colorbar ---
     start_color = [19, 31, 88]/255;    
