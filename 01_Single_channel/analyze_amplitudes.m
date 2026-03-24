@@ -234,7 +234,7 @@ for t_id = 1:numel(target_des)
             'inh_center_present', 'inh_target_present', 'inh_both_present', 'inh_any', ...
             'inh_center_amp', 'inh_target_amp'});
 
-        all_rows = [all_rows; new_row]; %#ok<AGROW>
+        all_rows = [all_rows; new_row]; 
     end
 
     % ========================================================
@@ -307,9 +307,9 @@ for t_id = 1:numel(target_des)
             xlim(lims); ylim(lims);
 
             if height(Te_stats) >= 3
-                txt = sprintf('p = %.3g\nN = %d\n(both present)', p_exc, height(Te_stats));
+                txt = sprintf('p = %.3g\nN = %d', p_exc, height(Te_stats));
             else
-                txt = sprintf('N = %d (no test)\n(both present)', height(Te_stats));
+                txt = sprintf('N = %d (no test)', height(Te_stats));
             end
 
             text(lims(1) + 0.05*range(lims), ...
@@ -323,9 +323,9 @@ for t_id = 1:numel(target_des)
                 'Units','normalized', 'HorizontalAlignment','center');
         end
 
-        xlabel('Gaze-on-center exc');
-        ylabel('Gaze-on-target exc');
-        title(sprintf('Target %d | Exc component', target_id));
+        xlabel('Gaze-on-center');
+        ylabel('Gaze-on-target');
+        title(sprintf('Target %d | Exc', target_id));
         grid on; axis square; hold off
 
         % =====================================================
@@ -346,9 +346,9 @@ for t_id = 1:numel(target_des)
             xlim(lims); ylim(lims);
 
             if height(Ti_stats) >= 3
-                txt = sprintf('p = %.3g\nN = %d\n(both present)', p_inh, height(Ti_stats));
+                txt = sprintf('p = %.3g\nN = %d', p_inh, height(Ti_stats));
             else
-                txt = sprintf('N = %d (no test)\n(both present)', height(Ti_stats));
+                txt = sprintf('N = %d (no test)', height(Ti_stats));
             end
 
             text(lims(1) + 0.05*range(lims), ...
@@ -362,9 +362,9 @@ for t_id = 1:numel(target_des)
                 'Units','normalized', 'HorizontalAlignment','center');
         end
 
-        xlabel('Gaze-on-center inh amplitude');
-        ylabel('Gaze-on-target inh amplitude');
-        title(sprintf('Target %d | Inh component', target_id));
+        xlabel('Gaze-on-center');
+        ylabel('Gaze-on-target');
+        title(sprintf('Target %d | Inh', target_id));
         grid on; axis square; hold off
     end
 end
