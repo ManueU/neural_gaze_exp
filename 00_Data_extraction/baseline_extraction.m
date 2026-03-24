@@ -85,8 +85,7 @@ end
 %% Baseline as suggested by Charles - condition/targets
 filename = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02.mat',... 
            '../00_Data_extraction/BCI02_Session_0924/motor_BCI02.mat',...
-           '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02.mat',...
-           '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02.mat'};
+           '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02.mat'};
 
 
 % Single channel
@@ -183,8 +182,7 @@ end
 filenames = {
     '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat', ...
     '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat', ...
-    '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'
-};
+    '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'};
 
 n_sets     = 6;
 n_arrays   = 2;
@@ -273,3 +271,109 @@ std_baseline_common  = std_baseline_common  / bin_size;
 
 
 
+%% Baseline globale per condizione
+filenames = {
+    '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat', ...
+    '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat', ...
+    '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'
+};
+
+condition_names = {'free-gaze', 'motor', 'controlled','gaze'};
+
+n_sets     = 6;
+n_arrays   = 2;
+n_channels = 96;
+n_trials   = 16;
+
+bin_size    = 0.02;
+period      = 0.1;
+bins_period = max(1, round(period / bin_size));
+
+phase_id = 1;
+n_ch     = n_arrays * n_channels;
+n_cond   = numel(filenames);
+
+verbose = false;
+
+% Carica i file una sola volta
+all_data = cell(size(filenames));
+for d = 1:n_cond
+    tmp = load(filenames{d});
+    all_data{d} = tmp.data;
+end
+
+% Statistiche separate per condizione
+sum_baseline   = zeros(n_cond, n_ch);
+sumsq_baseline = zeros(n_cond, n_ch);
+count_baseline = zeros(n_cond, n_ch);
+
+for d = 1:n_cond
+    data = all_data{d};
+
+    for set_idx = 1:n_sets
+        for array = 1:n_arrays
+            for trial = 1:n_trials
+
+                % Salta trial esclusi
+                if data(set_idx).Data(array).Interp(trial).Excluded ~= 0
+                    if verbose
+                        fprintf('Excluded trial: cond=%d, set=%d, array=%d, trial=%d\n', ...
+                            d, set_idx, array, trial);
+                    end
+                    continue;
+                end
+
+                x = data(set_idx).Data(array).Interp(trial).Task_states{phase_id, 2};
+
+                if isempty(x)
+                    continue;
+                end
+
+                if size(x, 1) < bins_period
+                    if verbose
+                        fprintf('Too few bins: cond=%d, set=%d, array=%d, trial=%d\n', ...
+                            d, set_idx, array, trial);
+                    end
+                    continue;
+                end
+
+                % Baseline: ultime bins_period righe, tutti i canali dell'array
+                bs = x(end-bins_period+1:end, 1:n_channels);   % [bins_period x n_channels]
+
+                % Indici globali dei canali dell'array corrente
+                ch_idx = (array-1)*n_channels + (1:n_channels);
+
+                % Statistiche per questa condizione
+                valid_mask = ~isnan(bs);
+                count_baseline(d, ch_idx) = count_baseline(d, ch_idx) + sum(valid_mask, 1);
+                sum_baseline(d, ch_idx)   = sum_baseline(d, ch_idx)   + sum(bs, 1, 'omitnan');
+                sumsq_baseline(d, ch_idx) = sumsq_baseline(d, ch_idx) + sum(bs.^2, 1, 'omitnan');
+            end
+        end
+    end
+end
+
+% Media baseline per condizione
+mean_baseline_cond = sum_baseline ./ count_baseline;
+
+% Deviazione standard campionaria per condizione
+std_baseline_cond = nan(n_cond, n_ch);
+valid_ch = count_baseline > 1;
+
+std_baseline_cond(valid_ch) = sqrt( ...
+    (sumsq_baseline(valid_ch) - ...
+    (sum_baseline(valid_ch).^2 ./ count_baseline(valid_ch))) ./ ...
+    (count_baseline(valid_ch) - 1) );
+
+% Conversione in firing rate
+mean_baseline_cond = mean_baseline_cond / bin_size;
+std_baseline_cond  = std_baseline_cond  / bin_size;
+
+% Facoltativo: output strutturato per condizione
+baseline_stats = struct();
+for d = 1:n_cond
+    baseline_stats(d).condition = condition_names{d};
+    baseline_stats(d).mean = mean_baseline_cond(d, :);
+    baseline_stats(d).std  = std_baseline_cond(d, :);
+    baseline_stats(d).count = count_baseline(d, :);
+end
