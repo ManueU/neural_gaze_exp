@@ -182,7 +182,9 @@ end
 filenames = {
     '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat', ...
     '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat', ...
-    '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'};
+    '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat', ...
+    '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02_exclUpdated.mat'
+    };
 
 n_sets     = 6;
 n_arrays   = 2;
