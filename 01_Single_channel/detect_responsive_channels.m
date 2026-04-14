@@ -16,7 +16,7 @@ ch_end = 96;
 target_des = 1:8;
 bin_size = 0.02;
 
-filename = '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat';
+filename = '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat'; %% DA MODIFICARE IN BASE ALLA CONDIZIONE
 
 array_names = ["medial", "lateral"];
 
@@ -54,7 +54,7 @@ if ~has_global_baseline && ~has_target_baseline
 end
 
 % ============================================================
-% CARICAMENTO DATI FREE-GAZE
+% CARICAMENTO DATI
 % ============================================================
 S = load(filename);
 data = S.data;
@@ -66,13 +66,14 @@ state_dur_s = cellfun(@(x) size(x,1) * bin_size, TS(:,2));
 state_onset_s = [0; cumsum(state_dur_s(1:end-1))];
 get_onset = @(name) state_onset_s(find(strcmpi(state_names, name), 1, 'first'));
 
-task_name = "Free-gaze";
+
+task_name = "Free-gaze";                                       %% DA MODIFICARE IN BASE ALLA CONDIZIONE
 lines_t   = [get_onset("pres12"); get_onset("reach")];
 lines_lab = ["Target cue"; "Go cue"];
 
 idx_go = find(strcmp(lines_lab, "Go cue"), 1);
 if isempty(idx_go)
-    error('Go cue non trovato nei Task_states del file free-gaze.');
+    error('Go cue non trovato nei Task_states del file gaze-on-target.');
 end
 go_time = lines_t(idx_go);
 
@@ -272,12 +273,12 @@ end
 % ============================================================
 % SALVATAGGIO
 % ============================================================
-save('responsive_channels_free_gaze.mat', ...
+save('responsive_channels_free_gaze_prova.mat', ...                                       %% DA MODIFICARE IN BASE ALLA CONDIZIONE
     'responsive_channels', 'results', 'responsive_matrix', ...
     'min_delta_from_baseline', 'min_duration_s', 'response_window_mode', ...
     'baseline_mode');
 
-disp('File salvato: responsive_channels_free_gaze.mat');
+disp('File salvato: responsive_channels_free_gaze_prova.mat');
 
 % ============================================================
 % HEATMAP
@@ -287,6 +288,6 @@ imagesc(responsive_matrix);
 colormap(gray);
 xlabel('Channel');
 ylabel('Target');
-title(sprintf('Responsive channels in Free-gaze'));
+title(sprintf('Responsive channels in free-gaze'));
 yticks(1:numel(target_des));
 yticklabels(string(target_des));
