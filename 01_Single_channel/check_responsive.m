@@ -5,8 +5,8 @@ clc
 % ============================================================
 % FILE
 % ============================================================
-results_file = 'responsive_channels_free_gaze.mat';
-data_file    = '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat';
+results_file = 'responsive_channels_gaze_on_center.mat';
+data_file    = '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat';
 
 load(results_file, 'responsive_matrix', 'results', ...
     'min_delta_from_baseline', 'min_duration_s', 'response_window_mode', 'baseline_mode');
@@ -32,7 +32,7 @@ show_thresholds = true;
 
 % Se vuoi limitare i plot a un sottoinsieme:
 array_list   = 2:n_arrays;
-channel_list = 72:n_channels;
+channel_list = 83:n_channels;
 
 % ============================================================
 % EVENTI TASK
@@ -167,8 +167,8 @@ for array = array_list
             if ~isnan(baseline_val)
                 yline(baseline_val, '--', 'Color', [0.2 0.2 0.2], 'LineWidth', 1.2);
                 if show_thresholds
-                    yline(baseline_val + min_delta_from_baseline, ':', 'Color', [0.5 0.5 0.5]);
-                    yline(baseline_val - min_delta_from_baseline, ':', 'Color', [0.5 0.5 0.5]);
+                    yline(baseline_val + min_delta_from_baseline, ':', 'Color', 'r', 'LineWidth', 1.2);
+                    yline(baseline_val - min_delta_from_baseline, ':', 'Color', 'r', 'LineWidth', 1.2);
                 end
             end
 
@@ -216,8 +216,8 @@ for array = array_list
             if ~isnan(baseline_val)
                 yline(baseline_val, '--', 'Color', [0.2 0.2 0.2], 'LineWidth', 1.2);
                 if show_thresholds
-                    yline(baseline_val + min_delta_from_baseline, ':', 'Color', [0.5 0.5 0.5]);
-                    yline(baseline_val - min_delta_from_baseline, ':', 'Color', [0.5 0.5 0.5]);
+                    yline(baseline_val + min_delta_from_baseline, ':', 'Color', 'r', 'LineWidth', 1.2);
+                    yline(baseline_val - min_delta_from_baseline, ':', 'Color', 'r', 'LineWidth', 1.2);
                 end
             end
 
