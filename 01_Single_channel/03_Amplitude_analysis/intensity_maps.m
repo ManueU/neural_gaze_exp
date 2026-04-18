@@ -1,6 +1,6 @@
 clc
 clear
-close all
+% close all
 
 %% =========================================================
 % PARAMETRI
@@ -71,7 +71,7 @@ for c = 1:3
             end
 
             if ~all(isnan(inh_vals))
-                inh_strength(ch) = max(abs(inh_vals), [], 'omitnan');
+                inh_strength(ch) = min(inh_vals, [], 'omitnan');
             end
         end
     end
@@ -131,42 +131,58 @@ end
 inh_vals_all = all_inh_vals(~isnan(all_inh_vals));
 
 if isempty(inh_vals_all)
-    clim_inh = [0 1];
+    clim_inh = [-1 0];
 else
     if use_percentile_scaling
-        vmax_inh = prctile(inh_vals_all, perc_val);
+        vmin_inh = prctile(inh_vals_all, 100 - perc_val);
     else
-        vmax_inh = max(inh_vals_all);
+        vmin_inh = min(inh_vals_all);
     end
-    if vmax_inh == 0
-        vmax_inh = 1;
+    if vmin_inh == 0
+        vmin_inh = -1;
     end
-    clim_inh = [0 vmax_inh];
+    clim_inh = [vmin_inh 0];
 end
 
 %% =========================================================
-% DIFFERENZA: gaze-on-center vs gaze-on-target
+% DIFFERENZA SIGNED NORMALIZZATA: gaze-on-target vs gaze-on-center
+% misura = (target - center) / max(target, center)
 % c=2 --> gaze-on-center
 % c=3 --> gaze-on-target
 % ==========================================================
-diff_exc_abs = abs(exc_maps{3} - exc_maps{2});
-diff_inh_abs = abs(inh_maps{3} - inh_maps{2});
 
-all_diff_vals = [diff_exc_abs(valid); diff_inh_abs(valid)];
+center_exc = exc_maps{2};
+target_exc = exc_maps{3};
+
+center_inh = inh_maps{2};
+target_inh = inh_maps{3};
+
+max_exc = max(target_exc, center_exc);
+max_inh = max(target_inh, center_inh);
+
+diff_exc_norm = (target_exc - center_exc) ./ max_exc;
+diff_inh_norm = (target_inh - center_inh) ./ max_inh;
+
+% evita Inf dove il denominatore è zero
+diff_exc_norm(~isfinite(diff_exc_norm)) = NaN;
+diff_inh_norm(~isfinite(diff_inh_norm)) = NaN;
+
+% scala colori simmetrica attorno a zero
+all_diff_vals = [diff_exc_norm(valid); diff_inh_norm(valid)];
 all_diff_vals = all_diff_vals(~isnan(all_diff_vals));
 
 if isempty(all_diff_vals)
-    diff_clim = [0 1];
+    diff_clim = [-1 1];
 else
     if use_percentile_scaling
-        diff_max = prctile(all_diff_vals, perc_val);
+        diff_lim = prctile(abs(all_diff_vals), perc_val);
     else
-        diff_max = max(all_diff_vals);
+        diff_lim = max(abs(all_diff_vals));
     end
-    if diff_max == 0
-        diff_max = 1;
+    if diff_lim == 0
+        diff_lim = 1;
     end
-    diff_clim = [0 diff_max];
+    diff_clim = [-diff_lim diff_lim];
 end
 
 %% =========================================================
@@ -199,7 +215,7 @@ for c = 1:3
     hold off
 end
 
-sgtitle('Excitatory response', 'FontWeight', 'bold')
+sgtitle('Excitatory response (Hz)', 'FontWeight', 'bold')
 
 %% =========================================================
 % FIGURA 2: INIBITORIA
@@ -211,7 +227,7 @@ for c = 1:3
     imagesc(inh_maps{c}, 'AlphaData', ~isnan(inh_maps{c}))
     axis image off
     title(cond_names{c})
-    colormap(gca, cmap_resp)
+    colormap(gca, flipud(cmap_resp))
     caxis(clim_inh)
     colorbar
     hold on
@@ -219,44 +235,62 @@ for c = 1:3
     hold off
 end
 
-sgtitle('Inhibitory response', 'FontWeight', 'bold')
+sgtitle('Inhibitory response (Hz)', 'FontWeight', 'bold')
 
 %% =========================================================
-% FIGURA 3: DIFFERENZA ASSOLUTA CENTER vs TARGET
-% stessa colormap delle figure principali
+% FIGURA 3: DIFFERENZA SIGNED NORMALIZZATA
+% (target - center) / media(target, center)
+% colormap divergente centrata su zero
 % ==========================================================
 figure('Color','w','Position',[100 100 1000 500])
 
 n = 256;
-x = linspace(0,1,n)';
+half = n/2;
 
-cmap_diff = [ ...
-    0.98 - 0.60*x, ...   % R ↓
-    0.98 - 0.40*x, ...   % G ↓ (più lento → azzurro)
-    0.96 - 0.10*x ...    % B quasi alto → blu soft
+% ---- blu -> bianco
+x1 = linspace(0,1,half)';
+neg = [ ...
+    0.10 + 0.90*x1, ...   % R
+    0.25 + 0.75*x1, ...   % G
+    0.75 + 0.25*x1 ...    % B
 ];
 
+% ---- bianco -> ocra
+x2 = linspace(0,1,half)';
+pos = [ ...
+    1.00 - 0.20*x2, ...   % R (leggermente meno di bianco)
+    1.00 - 0.45*x2, ...   % G
+    1.00 - 0.80*x2 ...    % B (crolla → giallo/arancio)
+];
+
+cmap_diff = [neg; pos];
+
 subplot(1,2,1)
-imagesc(diff_exc_abs, 'AlphaData', ~isnan(diff_exc_abs))
+imagesc(diff_exc_norm, 'AlphaData', ~isnan(diff_exc_norm))
 axis image off
-title('Gaze-on-target - Gaze-on-center')
+title('Excitatory response')
 colormap(gca, cmap_diff)
 caxis(diff_clim)
-colorbar
+cb1 = colorbar;
 hold on
 draw_array_outline(valid)
 hold off
 
 subplot(1,2,2)
-imagesc(diff_inh_abs, 'AlphaData', ~isnan(diff_inh_abs))
+imagesc(diff_inh_norm, 'AlphaData', ~isnan(diff_inh_norm))
 axis image off
-title('Gaze-on-target - Gaze-on-center')
+title('Inhibitory response')
 colormap(gca, cmap_diff)
 caxis(diff_clim)
-colorbar
+cb2 = colorbar;
 hold on
 draw_array_outline(valid)
 hold off
+
+sgtitle({ ...
+    'Gaze-on-target vs Gaze-on-center', ...
+    '(signed difference normalized to max)'}, ...
+    'FontWeight', 'bold')
 
 
 %% =========================================================
