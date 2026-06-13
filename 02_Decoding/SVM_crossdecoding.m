@@ -47,23 +47,21 @@
 % - i parametri bin_size, period_pre, period_post
 % =========================================================
 
-clearvars
-% close all
+clearvars -except mean_baseline_common std_baseline_common
+close all
 clc
 
 n_sets = 6;
 n_arrays = 2;
-n_trials = 32;
+n_trials = 16;
 bin_size = 0.02;
 period_pre = 0.1;
 period_post = 0.5;
 
-filename = { ...
-    '../00_Data_extraction/free-gaze_BCI02.mat' ...
-    '../00_Data_extraction/motor_BCI02.mat' ...
-    '../00_Data_extraction/controlled_BCI02.mat' ...
-    '../00_Data_extraction/gaze_BCI02.mat' ...
-};
+filename = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat',... 
+           '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat',...
+           '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat',...
+           '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02_exclUpdated.mat'};
 
 condLab = {'Free-gaze', 'Gaze-on-center', 'Gaze-on-target', 'Gaze-only'};
 nCond = numel(filename);
@@ -78,10 +76,10 @@ for d = 1:nCond
     [~, baseName, ext] = fileparts(filename{d});
     ds_name = [baseName ext];
 
-    if strcmp(ds_name, 'controlled_BCI02.mat')
+    if strcmp(ds_name, 'controlled_BCI02_exclUpdated.mat')
         PRE  = "Gaze";
         POST = "Reach";
-    elseif strcmp(ds_name, 'gaze_BCI02.mat')
+    elseif strcmp(ds_name, 'gaze_BCI02_exclUpdated.mat')
         PRE  = "Pres12";
         POST = "Gaze";
     else
@@ -91,7 +89,8 @@ for d = 1:nCond
 
     Y = [];
     for set = 1:n_sets
-        Y = [Y; [data(set).Data(1).Interp.Target_ID]'];
+        idx = [data(set).Data(1).Interp.Excluded] == 0;
+        Y = [Y; [data(set).Data(1).Interp(idx).Target_ID]'];
     end
     classes = unique(Y);
 
@@ -103,24 +102,27 @@ for d = 1:nCond
 
     start_pre = size(data(1).Data(1).Interp(1).Task_states{idx_pres,2}, 1) - n_bins_pre + 1;
     end_post  = n_bins_post;
+    n_valid = sum( arrayfun(@(s) sum([data(s).Data(1).Interp.Excluded] == 0), 1:n_sets) );
 
     j = 1;
-    X = cell(n_trials*n_sets,1);
+    X = cell(n_valid,1);
     for set = 1:n_sets
         for trial = 1:n_trials
 
             tmp_pre = [];
             tmp_post = [];
+            if data(set).Data(1).Interp(trial).Excluded == 0
+                for array = 1:n_arrays
+                    tmp_pre  = [tmp_pre,  data(set).Data(array).Interp(trial).Task_states{idx_pres,2}(start_pre:end, :)];
+                    tmp_post = [tmp_post, data(set).Data(array).Interp(trial).Task_states{idx_reach,2}(1:end_post, :)];
+                end
 
-            for array = 1:n_arrays
-                tmp_pre  = [tmp_pre,  data(set).Data(array).Interp(trial).Task_states{idx_pres,2}(start_pre:end, :)];
-                tmp_post = [tmp_post, data(set).Data(array).Interp(trial).Task_states{idx_reach,2}(1:end_post, :)];
+                matrix = [tmp_pre; tmp_post];
+                zscored = (mean(matrix./bin_size,1) - mean_baseline_common)./std_baseline_common;
+                zscored(isnan(zscored) | isinf(zscored)) = 0;
+                X{j} = zscored;
+                j = j + 1;
             end
-
-            matrix = [tmp_pre; tmp_post];
-            X{j} = mean(matrix./bin_size,1);
-            j = j + 1;
-
         end
     end
 
@@ -132,22 +134,22 @@ for d = 1:nCond
 
 end
 
+doBalanceTrain = true;  % bilancia classi nel training
+nRepBalance = 20;       % ripeti il sottocampionamento e media (stabile)
+rng(1);                 % riproducibile
+
 nClassi = numel(classes);
-acc_cross = nan(nCond, nCond);
-cm_cross  = cell(nCond, nCond);
+acc_cross     = nan(nCond, nCond);
+balacc_cross  = nan(nCond, nCond);
+cm_cross      = cell(nCond, nCond);
 
 t = templateSVM('KernelFunction','rbf', 'KernelScale','auto', 'Standardize',true);
+
 for iTr = 1:nCond
     fprintf('\n### TRAIN condizione: %s ###\n', condLab{iTr});
 
-    X_train = X_all{iTr};
-    Y_train = Y_all{iTr};
-
-    % Addestramento decoder
-    Msvm = fitcecoc(X_train, Y_train, ...
-        'Learners', t, ...
-        'Coding', 'onevsall', ...
-        'ClassNames', classes);
+    X_train_full = X_all{iTr};
+    Y_train_full = Y_all{iTr};
 
     for iTe = 1:nCond
         fprintf('   -> TEST su: %s\n', condLab{iTe});
@@ -155,15 +157,57 @@ for iTr = 1:nCond
         X_test = X_all{iTe};
         Y_test = Y_all{iTe};
 
-        % Predizione
-        Y_pred = predict(Msvm, X_test);
+        acc_rep    = nan(nRepBalance,1);
+        balacc_rep = nan(nRepBalance,1);
+        cm_sum     = zeros(nClassi);
 
-        % Confusion matrix ordinata
-        cm = confusionmat(Y_test, Y_pred, 'Order', classes);
-        cm_cross{iTr, iTe} = cm;
+        for r = 1:nRepBalance
 
-        % Accuracy globale
-        acc_cross(iTr, iTe) = sum(diag(cm)) / sum(cm(:));
+            % --- bilanciamento TRAIN (undersampling per classe) ---
+            if doBalanceTrain
+                nPerClass = inf;
+                for c = classes(:)'
+                    nPerClass = min(nPerClass, sum(Y_train_full == c));
+                end
+
+                if isinf(nPerClass) || nPerClass == 0
+                    idxKeep = (1:numel(Y_train_full))';
+                else
+                    idxKeep = [];
+                    for c = classes(:)'
+                        idxc = find(Y_train_full == c);
+                        idxKeep = [idxKeep; randsample(idxc, nPerClass)];
+                    end
+                end
+
+                X_train = X_train_full(idxKeep,:);
+                Y_train = Y_train_full(idxKeep,:);
+            else
+                X_train = X_train_full;
+                Y_train = Y_train_full;
+            end
+
+            % --- train ---
+            Msvm = fitcecoc(X_train, Y_train, ...
+                'Learners', t, ...
+                'Coding', 'onevsall', ...
+                'ClassNames', classes);
+
+            % --- test ---
+            Y_pred = predict(Msvm, X_test);
+
+            cm = confusionmat(Y_test, Y_pred, 'Order', classes);
+            cm_sum = cm_sum + cm;
+
+            acc_rep(r) = sum(diag(cm)) / sum(cm(:));
+
+            recall_c = diag(cm) ./ max(1, sum(cm,2)); % per-classe
+            balacc_rep(r) = mean(recall_c);
+        end
+
+        acc_cross(iTr,iTe)    = mean(acc_rep, 'omitnan');
+        balacc_cross(iTr,iTe) = mean(balacc_rep, 'omitnan');
+        cm_cross{iTr,iTe}     = round(cm_sum / nRepBalance);
     end
 end
 
@@ -171,8 +215,8 @@ end
 figure('Color','w');
 
 % accuracy in percentuale
-b = bar(1:nCond, acc_cross * 100, 'grouped', 'EdgeColor', 'none');
-ylabel('Accuracy (%)');
+b = bar(1:nCond, balacc_cross * 100, 'grouped', 'EdgeColor', 'none');
+ylabel('Balanced accuracy (%)');
 xlabel('Train condition');
 title('Cross-decoding analysis');
 xticks(1:nCond);
@@ -221,15 +265,15 @@ for p = 1:nPairs
     j = pairs(p,2);
 
     % Accuracy (in %) nelle due direzioni
-    vals(p,1) = acc_cross(i,j) * 100;   % train i → test j
-    vals(p,2) = acc_cross(j,i) * 100;   % train j → test i
+    vals(p,1) = balacc_cross(i,j) * 100;   % train i → test j
+    vals(p,2) = balacc_cross(j,i) * 100;   % train j → test i
 
 end
 
 figure('Color','w');
 
 b = bar(1:nPairs, vals, 'grouped', 'EdgeColor','none');
-ylabel('Accuracy (%)');
+ylabel('Balanced accuracy (%)');
 title('Cross-decoding analysis');
 
 ax = gca;
@@ -279,7 +323,7 @@ box off;
 %% Figure (3) - Cross-decoding matrix (confusion matrix)
 figure('Color','w');
 
-imagesc(acc_cross * 100);          
+imagesc(balacc_cross * 100);          
 blueNightMap = [
     1.00 1.00 1.00   % white
     0.85 0.92 1.00   % very light blue
@@ -300,6 +344,6 @@ yticklabels(condLab);
 
 xlabel('Test condition');
 ylabel('Train condition');
-title('Cross-decoding accuracy (%)');
+title('Cross-decoding balanced accuracy (%)');
 
 

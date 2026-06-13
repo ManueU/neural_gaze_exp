@@ -26,17 +26,20 @@ n_channels = 96;
 n_targets = 8; 
 n_trials = 16; 
 bin_size = 0.02; 
-period_pre = 1.0; 
+period_pre = 0.1; 
 period_post = 0.5; 
 
-filename = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat',...
+filename = {
+            '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat',...
             '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat',...
-            '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat',...
-            '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02_exclUpdated.mat'};
+            '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'
+            % ,...
+            % '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02_exclUpdated.mat'
+            };
 
 
 %% Costruzione matrice PCA 
-rng(0)
+% rng(0)
 condition = []; 
 for d = 1:numel(filename) 
     fprintf('\nDataset: %s\n', filename{d}); 
@@ -111,7 +114,7 @@ end
 
 
 %% PCA
-[coeff, score, latent, tsquared, explained] = pca(condition, 'Algorithm','svd');
+[coeff, score, latent, tsquared, explained, mu_pca] = pca(condition, 'Algorithm','svd');
 
 %% Varianza spiegata
 fprintf('\nVarianza spiegata:\n');
@@ -199,7 +202,7 @@ grid on; axis equal;
 hStart = plot3(nan,nan,nan, 'o', 'Color','k', 'MarkerFaceColor','k');
 hEnd   = plot3(nan,nan,nan, '^', 'Color','k', 'MarkerFaceColor','k');
 if nCond == 1
-    legend([hStart hEnd], {'Start','End'}, 'Location','northeastoutside');
+    legend([hStyles hStart hEnd], [labels, {'Start','End'}], 'Location','northeastoutside');
 else
     styles = {'-','--',':','-.'};
     hStyles = gobjects(1, nCond);
@@ -208,9 +211,7 @@ else
         ls = styles{mod(c-1, numel(styles))+1};
         hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
     end
-    legEntries{nCond+1} = 'Start';
-    legEntries{nCond+2} = 'End';
-    legend([hStyles hStart hEnd], labels, 'Location','northeastoutside');
+    legend([hStyles hStart hEnd], [labels, {'Start','End'}], 'Location','northeastoutside');
 end
 
 
@@ -254,12 +255,12 @@ end
 xlabel(sprintf('PC1 (%.1f%%)', explained(1)));
 ylabel(sprintf('PC2 (%.1f%%)', explained(2)));
 zlabel(sprintf('PC3 (%.1f%%)', explained(3)));
-grid on; axis equal;
+grid on;
 
 hStart = plot3(nan,nan,nan, 'o', 'Color','k', 'MarkerFaceColor','k');
 hEnd   = plot3(nan,nan,nan, '^', 'Color','k', 'MarkerFaceColor','k');
 if nCond == 1
-    legend([hStart hEnd], {'Start','End'}, 'Location','northeastoutside');
+    legend([hStyles hStart hEnd], [labels, {'Start','End'}], 'Location','northeastoutside');
 else
     styles = {'-','--',':','-.'};
     hStyles = gobjects(1, nCond);
@@ -268,9 +269,7 @@ else
         ls = styles{mod(c-1, numel(styles))+1};
         hStyles(c) = plot3(nan,nan,nan, ls, 'Color','k', 'LineWidth', 2);
     end
-    legEntries{nCond+1} = 'Start';
-    legEntries{nCond+2} = 'End';
-    legend([hStyles hStart hEnd], labels, 'Location','northeastoutside');
+    legend([hStyles hStart hEnd], [labels, {'Start','End'}], 'Location','northeastoutside');
 end
 
 %% Figure (3) - PCA centroids (1 dot per target x condition)

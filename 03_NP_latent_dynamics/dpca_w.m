@@ -53,24 +53,24 @@
 % 1: medial arm 
 % 2: lateral hand 
 
-clearvars -except mean_baseline std_baseline
-% close all
+clearvars -except mean_baseline std_baseline mean_baseline_common std_baseline_common
+close all
 clc
 
-sets = [2,4,5,6]; 
+sets = [1,2,3,4,5,6]; 
 n_sets = numel(sets); 
 n_arrays = 2;          
 n_channels = 96;    
 n_targets = 8; 
-n_trials = 32; 
+n_trials = 16; 
 bin_size = 0.02;       
-period_pre = 1.0;     % intervallo migliore 
+period_pre = 0.1;     % intervallo migliore 
 period_post = 0.5;        
 
 filename = { ...
-    '../00_Data_extraction/free-gaze_BCI02.mat', ...
-    '../00_Data_extraction/motor_BCI02.mat',...
-    '../00_Data_extraction/controlled_BCI02.mat'};  
+    '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat', ...
+    '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat',...
+    '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'};  
 
 
 %% Costruzione matrice condizione (media su trial, finestra PRE/POST)
@@ -133,7 +133,10 @@ for d = 1:numel(filename)
                         
                     end
                 end 
-                zscored = (mean(firing_rate,2) - mean_baseline.by_targets{1,d}(target, ch_global))./std_baseline.by_targets{1,d}(target, ch_global);
+                
+                % zscored = (mean(firing_rate,2) - mean_baseline.by_targets{1,d}(target, ch_global))./std_baseline.by_targets{1,d}(target, ch_global);
+                zscored = (mean(firing_rate,2) - mean_baseline_common(ch_global))./std_baseline_common(ch_global);
+                % zscored = mean(firing_rate,2);
                 zscored(isnan(zscored) | isinf(zscored)) = 0;
                 ZS_smooth = smoothdata(zscored, 1, 'gaussian', sigma_bins * 6);
                 zscored_by_targets = [zscored_by_targets; ZS_smooth];   
@@ -206,8 +209,8 @@ firingRatesAverage = permute(X, [1 3 4 2]);   % [N S D T]
 %   3 - tempo
 
 combinedParams = { ...
-   {1, [1 3]}, ...                 % 1: target-like (Goal)
-   {2, [2 3]}, ...                 % 2: condition-like (Gaze status)
+   {1,[1 3]}, ...                 % 1: target-like (Goal)
+   {2,[2 3]}, ...                 % 2: condition-like (Gaze status)
    {3}, ...                        % 3: time-only
    {[1 2], [1 2 3]} };             % 4: interazione target/condizione
 

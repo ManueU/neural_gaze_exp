@@ -32,7 +32,7 @@ function [acc, cm, metrics] = svm_cv(X, Y, k_fold)
             w(Ytr == classes{i}) = classW(i);
         end
 
-        model = fitcecoc(X(trainIdx,:), Y(trainIdx), 'Learners', t, 'Coding', 'onevsall', 'Weights', w);
+        model = fitcecoc(X(trainIdx,:), Y(trainIdx), 'Learners', t, 'Coding', 'onevsone', 'Weights', w);
         yhat  = predict(model, X(testIdx,:));
 
         Y_true = [Y_true; Y(testIdx)];

@@ -43,8 +43,8 @@
 
 
 %% CCA stability
-Xz_cond1 = (condition_sep{1} - muZ) ./ sigmaZ;
-Xz_cond2 = (condition_sep{2} - muZ) ./ sigmaZ;
+Xz_cond1 = condition_sep{2} - mu_pca;
+Xz_cond2 = condition_sep{3} - mu_pca;
 
 % Proiezione sulle PC comuni
 scores1 = Xz_cond1 * coeff;   

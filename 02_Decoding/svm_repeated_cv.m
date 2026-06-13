@@ -4,6 +4,7 @@ function [results, cm_pooled] = svm_repeated_cv(X, Y, k_fold, n_repeats, seed)
         seed = 0;
     end
 
+    
     Y = categorical(Y);
     allClasses = categories(Y);
     nClasses = numel(allClasses);
@@ -27,7 +28,7 @@ function [results, cm_pooled] = svm_repeated_cv(X, Y, k_fold, n_repeats, seed)
     for r = 1:n_repeats
 
         rng(seed + r);
-        cv = cvpartition(Y, 'KFold', k_fold);
+        cv = cvpartition(Y, 'KFold', k_fold, 'Stratify', true);
 
         % categorici vuoti ma con le stesse categorie di Y
         Y_true_rep = Y([]);

@@ -39,20 +39,23 @@
 
 
 clearvars
-close all
+% close all
 clc
 
 n_sets = 6;
 n_arrays = 2;
 n_trials = 16;
 bin_size = 0.02;
-period_pre = 0.1;
-period_post = 0.5;
+period_pre = 1.0;
+period_post = 0.0;
 
-filename = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat',... 
-           '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat',...
-           '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat',...
-           '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02_exclUpdated.mat'};
+filename = {
+           % '../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat',... 
+           % '../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat',...
+           % '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat'
+           % ,...
+           '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02_exclUpdated.mat'
+           };
 
 %% Costruzione vettore Y e matrice X per SVM + k-fold cross-validation
 cm_all  = cell(numel(filename),1);

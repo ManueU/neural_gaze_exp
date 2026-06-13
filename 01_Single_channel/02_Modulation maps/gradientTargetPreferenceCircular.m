@@ -25,12 +25,12 @@ function [pref_angle_map, tuning_strength_map] = gradientTargetPreferenceCircula
             valid = ~isnan(tmp_mod_values);
             if any(valid)
                 original_vals = tmp_mod_values(valid);
-                vals = original_vals - min(original_vals);
+                vals = original_vals - min(original_vals); % uso il valore di modulazione come peso per il vettore; questa operazione fa in modo che io non abbia valori negativi
                 angs = angles(valid);
 
-                vec = nansum(vals .* exp(1i * angs));
-                pref_angle_map(i,j) = angle(vec);
-                tuning_strength_map(i,j) = abs(vec);
+                vec = nansum(vals .* exp(1i * angs)); % per ogni target costruisco un vettore risultate e li sommo per ottenere la pref direction
+                pref_angle_map(i,j) = angle(vec); % l'angolo del vettore rappresenta la direzione spaziale verso cui l'elettrodo è maggiormente selettivo
+                tuning_strength_map(i,j) = abs(vec); % il modulo del vettore misura quanto la selettività è concentrata verso una direzione
             end
         end
     end

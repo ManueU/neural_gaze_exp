@@ -15,8 +15,8 @@ clearvars
 close all
 clc
 
-sets_pca = [1,2,4,5,6];
-n_sets = 5; 
+sets_pca = [2,4,5,6];
+n_sets = 4; 
 n_arrays = 2;      
 n_channels = 96;    
 n_targets = 8; 
@@ -24,10 +24,10 @@ bin_size = 0.02;
 period_pre = 0.1; 
 period_post = 0.5; 
 PRE = "Pres12";
-POST = "Gaze";
+POST = "Reach";
 
 %% Load 
-filename = '../00_Data_extraction/gaze_BCI02.mat';
+filename = '../00_Data_extraction/free-gaze_BCI02.mat';
 load(filename)
 
 %% Costruzione matrice PCA 

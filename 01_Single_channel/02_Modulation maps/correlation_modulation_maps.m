@@ -10,7 +10,7 @@ filename_all = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUp
 
 corr_data = struct(); 
 corr_data.n_condition = 3;
-corr_data.n_targets = n_targets;
+corr_data.n_targets = 8;
 corr_data.array = 2;
 
 labels = {"Free-gaze", "Gaze-on-center", "Gaze-on-target"};

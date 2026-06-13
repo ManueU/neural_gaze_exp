@@ -73,26 +73,26 @@ map = [black; map];
 
 
 
-% %% Figure
-% for array = 2
-%     figWidth  = 200 * n_targets;  
-%     figHeight = 220;  
-%     figure('Color','w', ...
-%        'Units','pixels', ...
-%        'Position',[100 100 figWidth figHeight])
-% 
-%     for target = 1:n_targets
-%         masked_index = modulation_matrix{target, array} .* modulation_mask{1,array};
-%         smoothed_masked = nangauss_smooth(masked_index, 4, 0.5);
-% 
-%         subplot(1, n_targets, target)
-%         imagesc(smoothed_masked)
-%         axis image          
-%         axis off            
-%         clim([-1 1])
-% 
-%         colormap(map)
-%     end
-% end
+%% Figure
+for array = 2
+    figWidth  = 200 * n_targets;  
+    figHeight = 220;  
+    figure('Color','w', ...
+       'Units','pixels', ...
+       'Position',[100 100 figWidth figHeight])
+
+    for target = 1:n_targets
+        masked_index = modulation_matrix{target, array} .* modulation_mask{1,array};
+        smoothed_masked = nangauss_smooth(masked_index, 4, 0.5);
+
+        subplot(1, n_targets, target)
+        imagesc(smoothed_masked)
+        axis image          
+        axis off            
+        clim([-1 1])
+
+        colormap(map)
+    end
+end
 
 

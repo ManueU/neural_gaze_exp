@@ -2,7 +2,7 @@ clearvars -except mean_baseline std_baseline
 % close all
 clc
 
-sets = [2,4,5,6]; 
+sets = [1,2,3,4,5,6]; 
 n_sets = numel(sets); 
 n_arrays = 2;
 n_trials = 32;
@@ -10,11 +10,10 @@ bin_size = 0.02;
 period_pre = 1.0;
 period_post = 0.5;
 
-filename = { ...
-    '../00_Data_extraction/free-gaze_BCI02.mat' ...
-    '../00_Data_extraction/motor_BCI02.mat' ...
-    '../00_Data_extraction/controlled_BCI02.mat' ...
-};
+filename = {'../00_Data_extraction/free-gaze_BCI02_withtracker_exclUpdated.mat',...
+    '../00_Data_extraction/motor_BCI02_withtracker_exclUpdated.mat',...
+    '../00_Data_extraction/controlled_BCI02_withtracker_exclUpdated.mat'};
+
 
 nCond = numel(filename);
 
@@ -30,7 +29,7 @@ for d = 1:nCond
     [~, baseName, ext] = fileparts(filename{d});
     ds_name = [baseName ext];
 
-    if strcmp(ds_name, 'controlled_BCI02.mat')
+    if strcmp(ds_name, 'controlled_BCI02_withtracker_exclUpdated.mat')
         PRE  = "Gaze";
         POST = "Reach";
     else

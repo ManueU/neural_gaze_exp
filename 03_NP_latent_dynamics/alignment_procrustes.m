@@ -43,14 +43,14 @@
 % che rende la traiettoria della condizione 2 il più simile possibile
 % a quella della condizione 1. Un valore d piccolo indica forme simili.
 
-Xz_cond1 = (condition_sep{1} - muZ) ./ sigmaZ;
-Xz_cond2 = (condition_sep{2} - muZ) ./ sigmaZ;
+Xz_cond1 = condition_sep{1} - mu_pca;
+Xz_cond2 = condition_sep{2} - mu_pca;
 
 scores1 = Xz_cond1 * coeff;   
 scores2 = Xz_cond2 * coeff;
 
 % Parametri per il confronto Procrustes
-pc_idx = 1:3;                     % PC da usare 
+pc_idx = 1:5;                     % PC da usare 
 T = nbin;   
 
 % Seleziona solo le PC desiderate
@@ -68,7 +68,7 @@ for tg = 1:n_targets
 
     % Procrustes per il singolo target
     [d_t, Yt_aligned, transform_t] = procrustes(Xt, Yt, ...
-        'scaling', true, 'reflection', false);
+        'scaling', false, 'reflection', false);
 
     d_targets(tg) = d_t;
     traj_cond1{tg}  = Xt;
@@ -192,3 +192,43 @@ xlabel('Time bin');
 ylabel('Residual distance');
 title('Residuals after Procrustes (all targets)');
 legend('Location','northeastoutside');
+
+%% Indice globale
+cond_pairs = [1 2; 1 3; 2 3];
+pair_names = {'Free-gaze vs Motor', ...
+              'Free-gaze vs Controlled', ...
+              'Motor vs Controlled'};
+
+D_global = nan(size(cond_pairs,1),1);
+
+for p = 1:size(cond_pairs,1)
+
+    c1 = cond_pairs(p,1);
+    c2 = cond_pairs(p,2);
+
+    scores1 = (condition_sep{c1} - mu_pca) * coeff;
+    scores2 = (condition_sep{c2} - mu_pca) * coeff;
+
+    scores1_pc = scores1(:, pc_idx);
+    scores2_pc = scores2(:, pc_idx);
+
+    [d_global, ~] = procrustes(scores1_pc, scores2_pc, ...
+        'scaling', false, ...
+        'reflection', false);
+
+    D_global(p) = d_global;
+end
+
+%% Figure (5)
+clear set
+figure('Color','w');
+bar(D_global, 'FaceColor', [0.6 0.8 0.6], 'EdgeColor', 'none');
+
+set(gca, 'XTick', 1:numel(pair_names), ...
+         'XTickLabel', pair_names, ...
+         'XTickLabelRotation', 30);
+
+ylabel('Global Procrustes distance');
+title('Global trajectory similarity between conditions');
+box off
+grid on
