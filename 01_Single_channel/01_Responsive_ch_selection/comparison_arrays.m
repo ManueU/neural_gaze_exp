@@ -1,9 +1,16 @@
+%% Responsive channel overlap map
+
+% Visualizes the spatial distribution of responsive channels across the
+% three experimental conditions and highlights their overlap on the array.
+% Each electrode is classified according to the number of conditions in
+% which it exhibits significant modulation.
+
 clc
 clear
 
 array = 1;
 
-% Carica mappa canali
+% Load channel map
 load('ChannelMap_BCI02.mat')
 motor_medial  = ChannelMap.ChannelNumbers{1,1};
 motor_lateral = ChannelMap.ChannelNumbers{1,3};
@@ -11,7 +18,7 @@ motor_electrodes = {motor_medial, motor_lateral};
 
 motor_map = motor_electrodes{array};
 
-% Carica canali responsive nelle 3 condizioni
+% Load responsive channels for all 3 experimental conditions
 load('responsive_channels_free_gaze.mat')
 ch_cond1 = unique(results.channel_global);
 
@@ -21,10 +28,10 @@ ch_cond2 = unique(results.channel_global);
 load('responsive_channels_gaze_on_target.mat')
 ch_cond3 = unique(results.channel_global);
 
-% Maschera posizioni valide
+% Mask of valid positions
 valid = ~isnan(motor_map);
 
-% Matrici logiche
+% Logic matrices
 mod1 = false(size(motor_map));
 mod2 = false(size(motor_map));
 mod3 = false(size(motor_map));
@@ -33,10 +40,10 @@ mod1(valid) = ismember(motor_map(valid), ch_cond1);
 mod2(valid) = ismember(motor_map(valid), ch_cond2);
 mod3(valid) = ismember(motor_map(valid), ch_cond3);
 
-% Numero di condizioni in cui ogni canale è modulante
+% Number of conditions in which each channel is responsive
 overlap = double(mod1) + double(mod2) + double(mod3);
 
-% Per il plotting: converti a double e metti NaN dove non esistono elettrodi
+% Convert to double and assign NaN to missing electrode positions for plotting
 mod1_plot = double(mod1);
 mod2_plot = double(mod2);
 mod3_plot = double(mod3);
@@ -47,10 +54,10 @@ mod2_plot(~valid) = NaN;
 mod3_plot(~valid) = NaN;
 overlap_plot(~valid) = NaN;
 
-% Figura
+% Figure
 figure('Color','w','Position',[100 100 1000 250])
 
-%% --- CONDITION 1 ---
+% --- Condition 1 ---
 subplot(1,4,1)
 imagesc(mod1_plot)
 axis image off
@@ -69,22 +76,22 @@ for i = 1:nr
             continue
         end
         
-        % sopra
+        % up
         if i == 1 || ~valid(i-1,j)
             plot([j-0.5 j+0.5],[i-0.5 i-0.5],'k','LineWidth',1)
         end
         
-        % sotto
+        % down
         if i == nr || ~valid(i+1,j)
             plot([j-0.5 j+0.5],[i+0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % sinistra
+        % left
         if j == 1 || ~valid(i,j-1)
             plot([j-0.5 j-0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % destra
+        % right
         if j == nc || ~valid(i,j+1)
             plot([j+0.5 j+0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
@@ -94,7 +101,7 @@ end
 
 hold off
 
-%% --- CONDITION 2 ---
+% --- Condition 2 ---
 subplot(1,4,2)
 imagesc(mod2_plot)
 axis image off
@@ -113,22 +120,22 @@ for i = 1:nr
             continue
         end
         
-        % sopra
+        % up
         if i == 1 || ~valid(i-1,j)
             plot([j-0.5 j+0.5],[i-0.5 i-0.5],'k','LineWidth',1)
         end
         
-        % sotto
+        % down
         if i == nr || ~valid(i+1,j)
             plot([j-0.5 j+0.5],[i+0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % sinistra
+        % left
         if j == 1 || ~valid(i,j-1)
             plot([j-0.5 j-0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % destra
+        % right
         if j == nc || ~valid(i,j+1)
             plot([j+0.5 j+0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
@@ -138,7 +145,7 @@ end
 
 hold off
 
-%% --- CONDITION 3 ---
+% --- Condition 3 ---
 subplot(1,4,3)
 imagesc(mod3_plot)
 axis image off
@@ -157,22 +164,22 @@ for i = 1:nr
             continue
         end
         
-        % sopra
+        % up
         if i == 1 || ~valid(i-1,j)
             plot([j-0.5 j+0.5],[i-0.5 i-0.5],'k','LineWidth',1)
         end
         
-        % sotto
+        % down
         if i == nr || ~valid(i+1,j)
             plot([j-0.5 j+0.5],[i+0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % sinistra
+        % left
         if j == 1 || ~valid(i,j-1)
             plot([j-0.5 j-0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % destra
+        % right
         if j == nc || ~valid(i,j+1)
             plot([j+0.5 j+0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
@@ -182,7 +189,7 @@ end
 
 hold off
 
-%% --- OVERLAP ---
+% --- Overlap ---
 subplot(1,4,4)
 imagesc(overlap_plot)
 axis image off
@@ -201,22 +208,22 @@ for i = 1:nr
             continue
         end
         
-        % sopra
+        % up
         if i == 1 || ~valid(i-1,j)
             plot([j-0.5 j+0.5],[i-0.5 i-0.5],'k','LineWidth',1)
         end
         
-        % sotto
+        % down
         if i == nr || ~valid(i+1,j)
             plot([j-0.5 j+0.5],[i+0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % sinistra
+        % left
         if j == 1 || ~valid(i,j-1)
             plot([j-0.5 j-0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
         
-        % destra
+        % right
         if j == nc || ~valid(i,j+1)
             plot([j+0.5 j+0.5],[i-0.5 i+0.5],'k','LineWidth',1)
         end
@@ -228,7 +235,7 @@ hold off
 
 [nr,nc] = size(overlap_plot);
 
-% aggiungi numeri SOLO nelle celle grigie (overlap = 1 o 2)
+% Add numbers only to gray cells (overlap = 1 or 2)
 for i = 1:nr
     for j = 1:nc
         
@@ -236,7 +243,7 @@ for i = 1:nr
             continue
         end
 
-        % costruisci label condizioni
+        % Labels
         labels = [];
         if mod1(i,j), labels = [labels, 1]; end
         if mod2(i,j), labels = [labels, 2]; end
@@ -246,7 +253,7 @@ for i = 1:nr
 
             txt = strjoin(string(labels), ',');
 
-            % colore testo
+            % text color
             txt_color = 'w';
 
             text(j, i, txt, ...
@@ -262,7 +269,6 @@ end
 %% --- LEGEND ---
 hold on
 
-% colori (uguali alla colormap overlap)
 c_none = [1 1 1];
 c_1    = [0.75 0.75 0.75];
 c_2    = [0.35 0.35 0.35];
