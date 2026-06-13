@@ -9,7 +9,7 @@ clc
 
 %% File selection and data loading
 % To be changed based on the experimental condition:
-results_file = 'responsive_channels_free-gaze.mat';
+results_file = '../responsive_channels_free_gaze.mat';
 % results_file = 'responsive_channels_gaze_on_center.mat';
 % results_file = 'responsive_channels_gaze_on_target.mat';
 
