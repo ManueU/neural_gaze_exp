@@ -12,7 +12,7 @@ bin_size = 0.02;
 n_channels = 96;
 
 array_sel = 2;
-channel_list = 70;
+channel_list = 86;
 array_names = ["medial", "lateral"];
 
 target_ids = 1:8;
@@ -31,7 +31,7 @@ target_colors = [
 smooth_w = 15;
 win_rel_move = [-0.5 1.0];
 win_rel_gaze = [-0.5 0.5];
-display_mode = "byTarget";   % "allTargets" or "byTarget"
+display_mode = "allTargets";   % "allTargets" or "byTarget"
 
 %% Conditions
 cond = struct( ...
@@ -95,7 +95,7 @@ function plot_psth_rasters(display_mode, trial_cache, cond, target_ids, target_c
 
     switch display_mode
         case "allTargets"
-            fig = figure('Color','w');
+            fig = figure('Color','w', 'Position',[100 100 1200 500]);
             tl = tiledlayout(fig, 2, numel(cond), 'TileSpacing','compact', 'Padding','compact');
 
             for c = 1:numel(cond)
@@ -106,7 +106,7 @@ function plot_psth_rasters(display_mode, trial_cache, cond, target_ids, target_c
 
         case "byTarget"
             for tt = 1:numel(target_ids)
-                fig = figure('Color','w');
+                fig = figure('Color','w', 'Position',[100 100 1200 500]);
                 tl = tiledlayout(fig, 2, numel(cond), 'TileSpacing','compact', 'Padding','compact');
                 color = target_colors(tt, :); 
                 for c = 1:numel(cond)
@@ -208,6 +208,7 @@ function finish_condition_axes(ax_psth, ax_raster, cond_info, t_end, n_trials, p
         ylabel(ax_psth, 'FR - baseline (Hz)');
     else
         ylabel(ax_psth, '');
+        yticklabels(ax_psth, []);
     end
     box(ax_psth,'off');
     ax_psth.XTickLabel = [];
