@@ -35,7 +35,7 @@ array_names = ["medial", "lateral"];
 plot_trial_mean = true;   % true = also display the unsmoothed mean PSTH
 show_thresholds = true;
 
-array_list   = 2:n_arrays;
+array_list   = 1:n_arrays;
 channel_list = 1:n_channels;
 
 %% Task events
