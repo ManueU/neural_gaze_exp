@@ -78,7 +78,7 @@ for channel_sel = channel_list
         channel_sel, bin_size, smooth_w, baseline_hz);
 
     plot_polar_summary(polar_reach, polar_gaze, cond, reach_cond_idx, gaze_cond_idx, ...
-        target_angles_deg, channel_sel);
+    target_angles_deg, target_colors, channel_sel);
 
     fprintf('Channel %d completed in %.2f s\n', channel_sel, toc(t_channel));
     fprintf('Press ENTER for next channel.\n\n');
@@ -293,45 +293,74 @@ function add_event_labels_between_axes(ax_psth, event_times, event_labels)
 end
 
 function plot_polar_summary(polar_reach, polar_gaze, cond, reach_cond_idx, gaze_cond_idx, ...
-        target_angles_deg, channel_sel)
+        target_angles_deg, target_colors, channel_sel)
 
     t_polar = tic;
     fig = figure('Color','w');
 
     pax1 = polaraxes('Parent', fig, 'Position',[0.07 0.18 0.38 0.70]);
-    plot_polar_tuning(pax1, polar_reach, cond(reach_cond_idx), target_angles_deg);
-    title(pax1, 'Reach-aligned', 'FontWeight','bold');
+    plot_polar_tuning(pax1, polar_reach, cond(reach_cond_idx), target_angles_deg, target_colors);
+    % title(pax1, 'Reach-aligned', 'FontWeight','bold');
 
     pax2 = polaraxes('Parent', fig, 'Position',[0.57 0.18 0.38 0.70]);
-    plot_polar_tuning(pax2, polar_gaze, cond(gaze_cond_idx), target_angles_deg);
-    title(pax2, 'Gaze-aligned', 'FontWeight','bold');
+    plot_polar_tuning(pax2, polar_gaze, cond(gaze_cond_idx), target_angles_deg, target_colors);
+    % title(pax2, 'Gaze-aligned', 'FontWeight','bold');
 
     fprintf('Polar channel %d: %.2f s\n', channel_sel, toc(t_polar));
 end
 
-function plot_polar_tuning(pax, polar_activity, cond_subset, target_angles_deg)
+function plot_polar_tuning(pax, polar_activity, cond_subset, target_angles_deg, target_colors)
+
     hold(pax,'on');
 
-    theta = deg2rad(target_angles_deg);
-    theta_closed = [theta theta(1)];
+    theta_deg = target_angles_deg;
+    theta_rad = deg2rad(theta_deg);
+    theta_closed = [theta_rad theta_rad(1)];
 
     for c = 1:numel(cond_subset)
         r = polar_activity(c,:);
         if all(isnan(r))
             continue
         end
+
         r = abs(r);
-        polarplot(pax, theta_closed, [r r(1)], 'k', 'LineWidth',1.8, ...
-            'LineStyle',cond_subset(c).line_style, 'DisplayName',cond_subset(c).name);
+        
+        polarplot(pax, theta_closed, [r r(1)], ...
+            'Color','k', ...
+            'LineWidth',1, ...
+            'LineStyle',cond_subset(c).line_style, ...
+            'DisplayName',cond_subset(c).name);
+
+        % Pallini colorati sui target
+        for tt = 1:numel(theta_rad)
+            polarplot(pax, theta_rad(tt), r(tt), 'o', ...
+                'MarkerSize', 6, ...
+                'MarkerFaceColor', target_colors(tt,:), ...
+                'MarkerEdgeColor', 'none', ...
+                'HandleVisibility','off');
+        end
     end
 
     vals = abs(polar_activity(:));
     vals = vals(~isnan(vals));
+
     if ~isempty(vals)
         pax.RLim = [0 max(vals) + eps];
     end
 
     pax.ThetaZeroLocation = 'right';
     pax.ThetaDir = 'counterclockwise';
+
+    pax.ThetaTick = theta_deg;
+    pax.ThetaTickLabel = [];
+    r_label = pax.RLim(2) * 1.12;
+
+    for tt = 1:numel(theta_deg)
+        text(pax, theta_rad(tt), r_label, sprintf('%d°', theta_deg(tt)), ...
+            'Color', 'k', ...
+            'HorizontalAlignment','center', ...
+            'VerticalAlignment','middle');
+    end
+
     legend(pax, 'Location','southoutside');
 end
