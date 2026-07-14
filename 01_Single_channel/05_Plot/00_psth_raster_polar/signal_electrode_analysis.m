@@ -2,34 +2,43 @@
 % Extracts target-specific trials, plots PSTH/raster and computes polar
 % tuning for reach- and gaze-aligned epochs.
 
-clearvars -except mean_baseline_common
-close all
+clearvars -except mean_baseline_common inhibited_channels
+% close all
 clc
 
 %% Parameters
-sets_plot = 1:6;
+% sets_plot = 1:6;
 bin_size = 0.02;
 n_channels = 96;
 
 array_sel = 2;
-channel_list = 86;
+channel_list = 1:n_channels;
 array_names = ["medial", "lateral"];
 
-target_ids = 1:8;
-target_angles_deg = [0 45 90 135 180 225 270 315];
+% target_ids = 1:8;
+% target_angles_deg = [0 45 90 135 180 225 270 315];
+% target_colors = [
+%     0.80 0.20 0.20   % 0°   rosso
+%     0.90 0.55 0.15   % 45°  arancione
+%     0.85 0.80 0.20   % 90°  giallo
+%     0.35 0.70 0.25   % 135° verde
+%     0.10 0.65 0.55   % 180° turchese
+%     0.20 0.55 0.85   % 225° azzurro
+%     0.35 0.35 0.80   % 270° blu
+%     0.65 0.30 0.75   % 315° viola
+% ];
+
+target_ids = 1:4;
+target_angles_deg = [0 90 180 270];
 target_colors = [
     0.80 0.20 0.20   % 0°   rosso
-    0.90 0.55 0.15   % 45°  arancione
     0.85 0.80 0.20   % 90°  giallo
-    0.35 0.70 0.25   % 135° verde
     0.10 0.65 0.55   % 180° turchese
-    0.20 0.55 0.85   % 225° azzurro
     0.35 0.35 0.80   % 270° blu
-    0.65 0.30 0.75   % 315° viola
 ];
 
 smooth_w = 15;
-win_rel_move = [-0.5 1.0];
+win_rel_move = [-0.1 0.5];
 win_rel_gaze = [-0.5 0.5];
 display_mode = "allTargets";   % "allTargets" or "byTarget"
 
@@ -38,10 +47,10 @@ cond = struct( ...
     'name', {'Free-gaze', 'Gaze-on-center', 'Gaze-on-target', 'Gaze-only'}, ...
     'code', {'free-gaze', 'motor', 'controlled', 'gaze-only'}, ...
     'file', { ...
-        '../../../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02_exclUpdated.mat', ...
-        '../../../00_Data_extraction/BCI02_Session_0924/motor_BCI02_exclUpdated.mat', ...
-        '../../../00_Data_extraction/BCI02_Session_0924/controlled_BCI02_exclUpdated.mat', ...
-        '../../../00_Data_extraction/BCI02_Session_0924/gaze_BCI02_exclUpdated.mat'}, ...
+        '../../../00_Data_extraction/BCI03_Session_417/free-gaze_BCI03_exclUpdated.mat', ...
+        '../../../00_Data_extraction/BCI03_Session_417/motor_BCI03_exclUpdated.mat', ...
+        '../../../00_Data_extraction/BCI03_Session_417/controlled_BCI03_exclUpdated.mat', ...
+        '../../../00_Data_extraction/BCI03_Session_417/gaze_BCI03_exclUpdated.mat'}, ...
     'line_style', {'-.', '-', '--', ':'});
 
 reach_cond_idx = [1 2 3];
@@ -55,12 +64,18 @@ for c = 1:numel(cond)
     S = load(cond(c).file);
     cond(c).data = S.data;
     [cond(c).event_times, cond(c).event_labels] = get_condition_events(cond(c).data, bin_size, cond(c).code);
+    if c == 2
+       sets_plot = 1:5;
+    else 
+        sets_plot = 1:6; 
+    end
 end
 
 fprintf('Loading completed in %.2f s\n\n', toc(t_load));
 
 %% Main loop
-for channel_sel = channel_list
+for channel_sel_ = 1:length(channel_list)
+    channel_sel = channel_list(channel_sel_);
     t_channel = tic;
     ch_global = (array_sel - 1) * n_channels + channel_sel;
     baseline_hz = mean_baseline_common(ch_global);
@@ -77,8 +92,8 @@ for channel_sel = channel_list
     plot_psth_rasters(display_mode, trial_cache, cond, target_ids, target_colors, ...
         channel_sel, bin_size, smooth_w, baseline_hz);
 
-    plot_polar_summary(polar_reach, polar_gaze, cond, reach_cond_idx, gaze_cond_idx, ...
-    target_angles_deg, target_colors, channel_sel);
+    % plot_polar_summary(polar_reach, polar_gaze, cond, reach_cond_idx, gaze_cond_idx, ...
+    % target_angles_deg, target_colors, channel_sel);
 
     fprintf('Channel %d completed in %.2f s\n', channel_sel, toc(t_channel));
     fprintf('Press ENTER for next channel.\n\n');
