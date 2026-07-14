@@ -2,21 +2,22 @@ clearvars
 close all
 clc
 
-filename_excel = "C:\Users\manue\OneDrive - Scuola Superiore Sant'Anna\Documents\PhD - Manuela Uliano\12_Period abroad\02_Chalmers\05_Experiment\03_Data_gaze\BCI02\02_Session_0924\Notes.xlsx";
+session = "417"; 
+v_trials = 1:32;
+
+filename_excel = "C:\Users\manue\OneDrive - Scuola Superiore Sant'Anna\Documents\PhD - Manuela Uliano\12_Period abroad\02_Chalmers\05_Experiment\03_Data_gaze\BCI03\Notes.xlsx";
 opts = detectImportOptions(filename_excel);
 opts = setvartype(opts, opts.VariableNames, "string");
 T = readtable(filename_excel, opts);
 
-conditions = ["Free-gaze", "Gaze-on-center", "Gaze-on-target", "Gaze-only"];
-filename_neural = {'../00_Data_extraction/BCI02_Session_0924/free-gaze_BCI02.mat',... 
-                   '../00_Data_extraction/BCI02_Session_0924/motor_BCI02.mat',...
-                   '../00_Data_extraction/BCI02_Session_0924/controlled_BCI02.mat',...
-                   '../00_Data_extraction/BCI02_Session_0924/gaze_BCI02.mat'};
+conditions = ["Gaze-on-target"];
+    % "Free-gaze", "Gaze-on-center", "Gaze-on-target", "Gaze-only"];
+filename_neural = {'../00_Data_extraction/BCI03_Session_417/controlled_BCI03.mat'};
 
 for condition = 1:numel(conditions)
     S = load(filename_neural{condition});
     data = S.data;
-    rows = (T.Condition == conditions(condition));
+    rows = (T.Condition == conditions(condition) & T.Session == session);
     for k = 1:numel(data)
         for j = 1:numel(data(k).Data)
             nO = numel(data(k).Data(j).Original);
@@ -43,18 +44,22 @@ for condition = 1:numel(conditions)
     
         theseRows = find(rows & (T.Set == setVal));
         for r = theseRows'
-            excludedStr = strtrim(T.ExcludedTrials(r));
-            if excludedStr == "" || ismissing(excludedStr)
+            goodStr = strtrim(T.GoodTrials(r));
+            if goodStr == "all" 
+                continue
+            end
+
+            if ismissing(goodStr)
+                for j = 1:numel(data(idx).Data)
+                    [data(idx).Data(j).Original(:).Excluded] = deal(1);
+                    [data(idx).Data(j).Interp(:).Excluded] = deal(1);
+                end
                 continue
             end
     
-            excl = str2double(strtrim(split(excludedStr, ",")));
+            excl = setdiff(v_trials, str2double(strtrim(split(goodStr, ","))));
             excl = excl(~isnan(excl));          % rimuovi NaN
             excl = unique(excl(:))';            % unici
-    
-            if isempty(excl)
-                continue
-            end
     
             for j = 1:numel(data(idx).Data)
                 nO = numel(data(idx).Data(j).Original);
